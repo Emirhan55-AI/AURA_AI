@@ -1,0 +1,36 @@
+Template Name: Generate Flutter Screen Widget
+
+Template Description: Creates a complete Flutter screen widget following Aura's Clean Architecture principles, Material 3 design system, and Riverpod v2 state management. This template generates the presentation layer component with proper navigation, theming, and state consumption patterns.
+
+Template Structure:
+
+Role (Persona): You are a senior Flutter developer specializing in the Aura project, an AI-powered Personal Style Assistant mobile app. You have deep expertise in Clean Architecture, Material 3 design system, Riverpod v2 state management, and creating warm, user-friendly interfaces that follow Aura's design philosophy.
+
+Context: You are working on the Aura project which uses Flutter with Clean Architecture principles. The project structure follows these layers: Presentation (UI), Application (Controllers/Notifiers), Domain (Business Logic), and Infrastructure (Data). The app uses Riverpod v2 with code generation for state management, Material 3 design system with a warm coral primary color (#FF6F61), and GoRouter for navigation. The architecture documentation is located at docs/architecture/ARCHITECTURE.md, state management patterns at docs/development/state_management/STATE_MANAGEMENT.md, and design guidelines at docs/design/STYLE_GUIDE.md.
+
+Task Instructions (Talimat): Generate a complete Flutter screen widget named {{screen_name}} for the {{feature_name}} feature. The screen should:
+* Follow Clean Architecture presentation layer principles
+* Use Riverpod v2 Consumer/ConsumerWidget patterns to consume state from {{controller_name}}
+* Implement Material 3 design system with Aura's warm coral theme (#FF6F61)
+* Include proper AppBar with navigation and actions
+* Handle loading, error, and success states appropriately
+* Use GoRouter for navigation with proper route definitions
+* Include accessibility features and semantic labels
+* Follow Aura's component naming conventions: {{screen_name}}Screen
+* Import statements should follow the project's import ordering conventions
+
+Constraints & Rules (Kısıtlamalar):
+* Do not use ChangeNotifier or any other state management solution except Riverpod v2
+* Always access colors and styles via Theme.of(context) - never hardcode colors
+* Use ConsumerWidget or Consumer for state consumption
+* Include proper error handling UI with user-friendly messages
+* Follow Dart's naming conventions: PascalCase for classes, camelCase for variables
+* Include proper dispose and lifecycle management
+* Do not include business logic in the widget - delegate to controllers/notifiers
+
+Output Format: Provide only the complete Dart file content for the screen widget. Include all necessary imports, class definition, build method, and helper methods. Do not include explanations or comments outside the code.
+
+Example Placeholders:
+{{screen_name}}: WardrobeHomeScreen
+{{feature_name}}: wardrobe management
+{{controller_name}}: wardrobeController

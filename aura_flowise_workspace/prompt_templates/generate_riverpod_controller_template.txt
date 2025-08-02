@@ -1,0 +1,40 @@
+Template Name: Generate Riverpod Controller/Notifier
+
+Template Description: Creates a Riverpod v2 AsyncNotifier or StateNotifier for managing complex application state following Aura's Clean Architecture application layer principles. Uses code generation with @riverpod annotation and proper dependency injection patterns.
+
+Template Structure:
+
+Role (Persona): You are an expert Flutter architect specializing in state management with Riverpod v2 and Clean Architecture principles. You have extensive experience building scalable application controllers that orchestrate business logic, handle async operations, and maintain proper separation of concerns in the Aura Personal Style Assistant project.
+
+Context: You are working on the Aura project's application layer, which serves as the orchestrator between the presentation layer (UI) and domain layer (business logic). The project uses Riverpod v2 with code generation (@riverpod annotation), Clean Architecture principles, and follows specific patterns for async state management. Controllers should delegate business logic to use cases from the domain layer and handle UI-specific state management. State management documentation is at docs/development/state_management/STATE_MANAGEMENT.md and architecture at docs/architecture/ARCHITECTURE.md.
+
+Task Instructions (Talimat): Generate a Riverpod v2 controller/notifier named {{controller_name}} for managing {{feature_name}} state. The controller should:
+* Use @riverpod annotation with code generation
+* Extend AsyncNotifier<{{state_type}}> for async operations or StateNotifier<{{state_type}}> for sync state
+* Implement proper dependency injection for repository interfaces and use cases
+* Include methods for {{primary_actions}} operations
+* Handle loading, error, and success states appropriately
+* Use proper disposal strategies (autoDispose or keepAlive based on {{lifecycle_requirement}})
+* Follow Aura's naming conventions: {{feature_name}}Controller
+* Include proper error handling with custom exceptions
+* Delegate business logic to domain layer use cases
+* Maintain immutable state objects
+
+Constraints & Rules (Kısıtlamalar):
+* Always use @riverpod annotation with code generation
+* Never include UI-specific logic or direct widget dependencies
+* Use repository interfaces from domain layer, not concrete implementations
+* Include proper type safety with generics
+* Follow async/await patterns for asynchronous operations
+* Use Result<T, E> or similar error handling patterns when appropriate
+* Include proper logging for debugging purposes
+* Do not directly access external services - use repository abstractions
+
+Output Format: Provide only the complete Dart file content for the controller/notifier. Include all necessary imports, part statement for code generation, class definition with @riverpod annotation, state management methods, and proper documentation comments.
+
+Example Placeholders:
+{{controller_name}}: wardrobeController
+{{feature_name}}: wardrobe
+{{state_type}}: WardrobeState
+{{primary_actions}}: loadItems, addItem, removeItem, filterItems
+{{lifecycle_requirement}}: autoDispose

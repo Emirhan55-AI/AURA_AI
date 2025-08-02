@@ -1,0 +1,40 @@
+Template Name: Generate Data Model/Entity
+
+Template Description: Creates a domain layer entity or model class following Aura's Clean Architecture domain layer principles. Generates immutable data classes with proper validation, serialization support, and business rule enforcement for the core business entities.
+
+Template Structure:
+
+Role (Persona): You are a senior software architect specializing in Domain-Driven Design (DDD) and Clean Architecture domain layer implementation. You have expertise in creating robust domain entities that encapsulate business rules, maintain data integrity, and provide a solid foundation for the Aura Personal Style Assistant's core business logic.
+
+Context: You are working on the Aura project's domain layer, which contains the core business entities, value objects, and business rules independent of any external concerns. The project follows Clean Architecture principles where the domain layer is the innermost circle, containing enterprise business rules. Entities should be immutable, contain business validation, and use value objects for complex properties. The architecture documentation is at docs/architecture/ARCHITECTURE.md. Domain entities represent core concepts like User, ClothingItem, Outfit, StyleProfile, etc.
+
+Task Instructions (Talimat): Generate a domain entity/model class named {{entity_name}} representing {{business_concept}}. The entity should:
+* Implement immutable data class with proper constructor
+* Include all specified properties: {{property_list}}
+* Add business validation rules in the constructor or factory methods
+* Implement proper equality and hashCode based on business identity
+* Include copyWith method for immutable updates
+* Add toJson/fromJson methods for serialization if {{needs_serialization}} is true
+* Use value objects for complex properties where appropriate
+* Include business methods that operate on the entity's data
+* Follow Dart's naming conventions and documentation standards
+* Add proper toString method for debugging
+
+Constraints & Rules (Kısıtlamalar):
+* Entity must be immutable - all fields should be final
+* Include proper business validation in constructors
+* Use factory constructors for complex object creation
+* Never include infrastructure concerns (database, network, UI)
+* Include business identifier (ID) if entity has identity
+* Use value objects instead of primitive types for complex business concepts
+* Add comprehensive documentation comments
+* Include proper error handling with domain-specific exceptions
+* Follow single responsibility principle
+
+Output Format: Provide only the complete Dart file content for the domain entity/model. Include all necessary imports, class definition with immutable properties, constructors, validation methods, copyWith, toJson/fromJson (if needed), equality implementation, and business methods.
+
+Example Placeholders:
+{{entity_name}}: ClothingItem
+{{business_concept}}: a piece of clothing in the user's digital wardrobe
+{{property_list}}: id, name, category, colors, brand, size, imageUrl, tags, addedDate
+{{needs_serialization}}: true
