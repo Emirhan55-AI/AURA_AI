@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 
 void main() {
-  runApp(const AuraApp());
+  runApp(
+    const ProviderScope(
+      child: AuraApp(),
+    ),
+  );
 }
 
 /// Main Aura application entry point
-/// Now using Go Router for navigation management
-class AuraApp extends StatelessWidget {
+/// Uses Riverpod for state management and provider-based routing
+class AuraApp extends ConsumerWidget {
   const AuraApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    
     return MaterialApp.router(
-      routerConfig: appRouter,
+      routerConfig: router,
       title: 'Aura',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

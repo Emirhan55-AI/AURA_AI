@@ -15,6 +15,10 @@ class ClothingItemModel {
   final String? brand;
   @JsonKey(name: 'purchase_date', fromJson: _dateFromString, toJson: _dateToString)
   final DateTime? purchaseDate;
+  @JsonKey(name: 'purchase_location')
+  final String? purchaseLocation;
+  final String? size;
+  final String? condition;
   final double? price;
   final String? currency;
   @JsonKey(name: 'image_url')
@@ -31,6 +35,8 @@ class ClothingItemModel {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at', fromJson: _dateTimeFromString, toJson: _dateTimeToString)
   final DateTime updatedAt;
+  @JsonKey(name: 'deleted_at', fromJson: _nullableDateTimeFromString, toJson: _nullableDateTimeToString)
+  final DateTime? deletedAt;
 
   const ClothingItemModel({
     required this.id,
@@ -41,6 +47,9 @@ class ClothingItemModel {
     this.pattern,
     this.brand,
     this.purchaseDate,
+    this.purchaseLocation,
+    this.size,
+    this.condition,
     this.price,
     this.currency = 'USD',
     this.imageUrl,
@@ -51,6 +60,7 @@ class ClothingItemModel {
     this.isFavorite = false,
     required this.createdAt,
     required this.updatedAt,
+    this.deletedAt,
   });
 
   factory ClothingItemModel.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +78,9 @@ class ClothingItemModel {
       pattern: pattern,
       brand: brand,
       purchaseDate: purchaseDate,
+      purchaseLocation: purchaseLocation,
+      size: size,
+      condition: condition,
       price: price,
       currency: currency,
       imageUrl: imageUrl,
@@ -78,6 +91,7 @@ class ClothingItemModel {
       isFavorite: isFavorite,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      deletedAt: deletedAt,
     );
   }
 
@@ -91,6 +105,9 @@ class ClothingItemModel {
       pattern: entity.pattern,
       brand: entity.brand,
       purchaseDate: entity.purchaseDate,
+      purchaseLocation: entity.purchaseLocation,
+      size: entity.size,
+      condition: entity.condition,
       price: entity.price,
       currency: entity.currency,
       imageUrl: entity.imageUrl,
@@ -101,6 +118,7 @@ class ClothingItemModel {
       isFavorite: entity.isFavorite,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      deletedAt: entity.deletedAt,
     );
   }
 
@@ -120,6 +138,16 @@ class ClothingItemModel {
   }
 
   static String _dateTimeToString(DateTime dateTime) {
+    return dateTime.toIso8601String();
+  }
+
+  static DateTime? _nullableDateTimeFromString(String? dateTimeString) {
+    if (dateTimeString == null) return null;
+    return DateTime.tryParse(dateTimeString);
+  }
+
+  static String? _nullableDateTimeToString(DateTime? dateTime) {
+    if (dateTime == null) return null;
     return dateTime.toIso8601String();
   }
 }

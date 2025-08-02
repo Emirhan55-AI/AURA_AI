@@ -8,11 +8,22 @@ class CategoryModel {
   final String id;
   final String name;
   final String? description;
+  final String? icon;
+  @JsonKey(name: 'parent_id')
+  final String? parentId;
+  @JsonKey(name: 'created_at', fromJson: _dateTimeFromString, toJson: _dateTimeToString)
+  final DateTime createdAt;
+  @JsonKey(name: 'updated_at', fromJson: _dateTimeFromString, toJson: _dateTimeToString)
+  final DateTime updatedAt;
 
   const CategoryModel({
     required this.id,
     required this.name,
     this.description,
+    this.icon,
+    this.parentId,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) =>
@@ -25,6 +36,10 @@ class CategoryModel {
       id: id,
       name: name,
       description: description,
+      icon: icon,
+      parentId: parentId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
@@ -33,6 +48,19 @@ class CategoryModel {
       id: entity.id,
       name: entity.name,
       description: entity.description,
+      icon: entity.icon,
+      parentId: entity.parentId,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
     );
+  }
+
+  // Helper methods for datetime conversion
+  static DateTime _dateTimeFromString(String dateTimeString) {
+    return DateTime.parse(dateTimeString);
+  }
+
+  static String _dateTimeToString(DateTime dateTime) {
+    return dateTime.toIso8601String();
   }
 }

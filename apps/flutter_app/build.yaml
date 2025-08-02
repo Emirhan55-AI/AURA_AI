@@ -1,0 +1,46 @@
+# Build configuration for Aura app
+# Optimizes code generation for Riverpod, JSON serialization, and Freezed
+
+targets:
+  $default:
+    builders:
+      # Riverpod code generation configuration
+      riverpod_generator:
+        enabled: true
+        generate_for:
+          - lib/**
+        options:
+          debug: false
+        
+      # JSON serialization configuration
+      json_serializable:
+        enabled: true
+        generate_for:
+          - lib/**
+        options:
+          any_map: false
+          checked: true
+          create_factory: true
+          create_to_json: true
+          explicit_to_json: true
+          field_rename: none
+          include_if_null: true
+          
+      # Freezed code generation configuration  
+      freezed:
+        enabled: true
+        generate_for:
+          - lib/**
+        options:
+          copy_with: true
+          equal: true
+          to_string: true
+          map: true
+          when: true
+
+    # Source generation configuration
+    sources:
+      - "$package$"
+      - "lib/**"
+      - "!lib/**.g.dart"
+      - "!lib/**.freezed.dart"

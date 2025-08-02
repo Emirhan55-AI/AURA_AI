@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -40,7 +45,7 @@ dependencies:
   riverpod_annotation: ^2.3.5
   
   # Google Fonts for Typography
-  google_fonts: ^6.2.1
+  google_fonts: ^6.3.0
   
   # Navigation - Go Router
   go_router: ^14.2.7
@@ -48,11 +53,44 @@ dependencies:
   # Functional Programming - Either type for error handling
   dartz: ^0.10.1
   
+  # Animations - Flutter Animate
+  flutter_animate: ^4.5.2
+  
   # Supabase - Backend as a Service
   supabase_flutter: ^2.5.6
   
   # JSON Serialization
   json_annotation: ^4.9.0
+  
+  # Data Classes
+  freezed_annotation: ^2.4.4
+  
+  # Secure Storage
+  flutter_secure_storage: ^9.2.2
+  
+  # Biometric Authentication
+  local_auth: ^2.1.8
+  
+  # Encryption
+  crypto: ^3.0.3
+  
+  # Shared Preferences
+  shared_preferences: ^2.2.3
+  
+  # Package Info
+  package_info_plus: ^8.0.0
+  
+  # Image Processing
+  image: ^4.2.0
+  
+  # Image Picker - Camera and Gallery
+  image_picker: ^1.0.4
+  
+  # Image Cropper - Image Editing
+  image_cropper: ^5.0.1
+  
+  # Path utilities
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -65,14 +103,20 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   
+  # Testing Dependencies
+  mockito: ^5.4.4
+  build_runner: ^2.4.11
+  
   # Code Generation for Riverpod
   riverpod_generator: ^2.4.3
-  build_runner: ^2.4.11
   custom_lint: ^0.6.4
   riverpod_lint: ^2.3.10
   
   # JSON Serialization - Code Generation
   json_serializable: ^6.8.0
+  
+  # Data Classes - Code Generation
+  freezed: ^2.5.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

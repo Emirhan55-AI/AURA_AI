@@ -7,6 +7,9 @@ class ClothingItem {
   final String? pattern;
   final String? brand;
   final DateTime? purchaseDate;
+  final String? purchaseLocation;
+  final String? size;
+  final String? condition;
   final double? price;
   final String? currency;
   final String? imageUrl;
@@ -17,6 +20,7 @@ class ClothingItem {
   final bool isFavorite;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? deletedAt;
 
   const ClothingItem({
     required this.id,
@@ -27,6 +31,9 @@ class ClothingItem {
     this.pattern,
     this.brand,
     this.purchaseDate,
+    this.purchaseLocation,
+    this.size,
+    this.condition,
     this.price,
     this.currency = 'USD',
     this.imageUrl,
@@ -37,6 +44,7 @@ class ClothingItem {
     this.isFavorite = false,
     required this.createdAt,
     required this.updatedAt,
+    this.deletedAt,
   });
 
   @override
@@ -63,6 +71,9 @@ class ClothingItem {
     String? pattern,
     String? brand,
     DateTime? purchaseDate,
+    String? purchaseLocation,
+    String? size,
+    String? condition,
     double? price,
     String? currency,
     String? imageUrl,
@@ -73,6 +84,7 @@ class ClothingItem {
     bool? isFavorite,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? deletedAt,
   }) {
     return ClothingItem(
       id: id ?? this.id,
@@ -83,6 +95,9 @@ class ClothingItem {
       pattern: pattern ?? this.pattern,
       brand: brand ?? this.brand,
       purchaseDate: purchaseDate ?? this.purchaseDate,
+      purchaseLocation: purchaseLocation ?? this.purchaseLocation,
+      size: size ?? this.size,
+      condition: condition ?? this.condition,
       price: price ?? this.price,
       currency: currency ?? this.currency,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -93,6 +108,7 @@ class ClothingItem {
       isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../wardrobe/presentation/screens/wardrobe_home_screen.dart';
 
 /// Main screen that provides the core navigation structure for the Aura app
 /// Features a bottom navigation bar with 5 main sections and consistent app bar
@@ -10,36 +11,68 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen>
+class _MainScreenState extends State<MainScreen> 
     with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _animationController;
+  late AnimationController _scaleController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Main content animation controller
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
+    
+    // Button press animation controller
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    
+    // Fade animation for content transitions
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+    
+    // Slide animation for content transitions
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutQuart,
+    ));
+    
+    // Scale animation for button press feedback
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _scaleController,
       curve: Curves.easeInOut,
     ));
+
+    // Start initial animation
     _animationController.forward();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _scaleController.dispose();
     super.dispose();
-  }
-
-  /// Placeholder widgets for each main section
+  }  /// Placeholder widgets for each main section
   /// These will be replaced with actual screen implementations
   static const List<Widget> _screenOptions = <Widget>[
     // Home Screen Placeholder
@@ -50,13 +83,8 @@ class _MainScreenState extends State<MainScreen>
       color: Color(0xFF6B46C1),
     ),
     
-    // Wardrobe Screen Placeholder
-    _PlaceholderScreen(
-      title: 'Wardrobe',
-      subtitle: 'Organize and manage your clothing',
-      icon: Icons.checkroom_outlined,
-      color: Color(0xFF059669),
-    ),
+    // Wardrobe Screen - Now functional!
+    WardrobeHomeScreen(),
     
     // Style Assistant Screen Placeholder
     _PlaceholderScreen(
@@ -66,11 +94,11 @@ class _MainScreenState extends State<MainScreen>
       color: Color(0xFFDC2626),
     ),
     
-    // Social Screen Placeholder
+    // Inspire Me Screen Placeholder
     _PlaceholderScreen(
-      title: 'Social',
-      subtitle: 'Connect with the style community',
-      icon: Icons.groups_outlined,
+      title: 'Inspire Me',
+      subtitle: 'Discover new styles and inspiration',
+      icon: Icons.lightbulb_outlined,
       color: Color(0xFF2563EB),
     ),
     
@@ -85,9 +113,16 @@ class _MainScreenState extends State<MainScreen>
 
   void _onItemTapped(int index) {
     if (index != _selectedIndex) {
+      // Trigger button press animation
+      _scaleController.forward().then((_) {
+        _scaleController.reverse();
+      });
+      
       setState(() {
         _selectedIndex = index;
       });
+      
+      // Reset and start content transition animation
       _animationController.reset();
       _animationController.forward();
     }
@@ -101,9 +136,17 @@ class _MainScreenState extends State<MainScreen>
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(theme, colorScheme),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: _screenOptions[_selectedIndex],
+      body: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: _screenOptions[_selectedIndex],
+            ),
+          );
+        },
       ),
       bottomNavigationBar: _buildBottomNavigationBar(theme, colorScheme),
     );
@@ -116,22 +159,25 @@ class _MainScreenState extends State<MainScreen>
       elevation: 0,
       scrolledUnderElevation: 1,
       surfaceTintColor: colorScheme.surfaceTint,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.primary,
-                colorScheme.secondary,
-              ],
+      leading: Semantics(
+        label: 'Aura app logo',
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.secondary,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.auto_awesome,
-            color: colorScheme.onPrimary,
-            size: 24,
+            child: Icon(
+              Icons.auto_awesome,
+              color: colorScheme.onPrimary,
+              size: 24,
+            ),
           ),
         ),
       ),
@@ -145,58 +191,69 @@ class _MainScreenState extends State<MainScreen>
       centerTitle: false,
       actions: [
         // Search button
-        IconButton(
-          onPressed: () {
-            // TODO: Implement search functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Search feature coming soon'),
-                backgroundColor: colorScheme.primary,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
-          icon: Icon(
-            Icons.search_outlined,
-            color: colorScheme.onSurfaceVariant,
+        Semantics(
+          label: 'Search for items and styles',
+          button: true,
+          child: IconButton(
+            onPressed: () {
+              // TODO: Implement search functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Search feature coming soon'),
+                  backgroundColor: colorScheme.primary,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: Icon(
+              Icons.search_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'Search',
           ),
-          tooltip: 'Search',
         ),
         
         // Notifications button
-        Stack(
-          children: [
-            IconButton(
-              onPressed: () {
-                // TODO: Implement notifications
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Notifications feature coming soon'),
-                    backgroundColor: colorScheme.primary,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              icon: Icon(
-                Icons.notifications_outlined,
-                color: colorScheme.onSurfaceVariant,
+        Semantics(
+          label: 'View notifications',
+          button: true,
+          child: Stack(
+            children: [
+              IconButton(
+                onPressed: () {
+                  // TODO: Implement notifications
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Notifications feature coming soon'),
+                      backgroundColor: colorScheme.primary,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                tooltip: 'Notifications',
               ),
-              tooltip: 'Notifications',
-            ),
-            // Notification badge (placeholder)
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: colorScheme.error,
-                  shape: BoxShape.circle,
+              // Notification badge (placeholder)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Semantics(
+                  label: 'You have new notifications',
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         
         const SizedBox(width: 8),
@@ -204,67 +261,145 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  /// Builds the bottom navigation bar with 5 main sections
+  /// Builds the bottom navigation bar with 5 main sections and animation feedback
   Widget _buildBottomNavigationBar(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+    return AnimatedBuilder(
+      animation: _scaleController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _selectedIndex == _selectedIndex ? _scaleAnimation.value : 1.0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+              backgroundColor: colorScheme.surface,
+              selectedItemColor: colorScheme.primary,
+              unselectedItemColor: colorScheme.onSurfaceVariant,
+              selectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              iconSize: 24,
+              elevation: 0,
+              items: [
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Navigate to Home tab',
+                      child: Icon(Icons.home_outlined),
+                    ),
+                  ),
+                  activeIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Home tab selected',
+                      child: Icon(Icons.home),
+                    ),
+                  ),
+                  label: 'Home',
+                  tooltip: 'Home Screen',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Navigate to Wardrobe tab',
+                      child: Icon(Icons.checkroom_outlined),
+                    ),
+                  ),
+                  activeIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Wardrobe tab selected',
+                      child: Icon(Icons.checkroom),
+                    ),
+                  ),
+                  label: 'Wardrobe',
+                  tooltip: 'Wardrobe Management',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Navigate to Style Assistant tab',
+                      child: Icon(Icons.auto_awesome_outlined),
+                    ),
+                  ),
+                  activeIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Style Assistant tab selected',
+                      child: Icon(Icons.auto_awesome),
+                    ),
+                  ),
+                  label: 'Style',
+                  tooltip: 'Style Assistant',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Navigate to Inspiration tab',
+                      child: Icon(Icons.lightbulb_outlined),
+                    ),
+                  ),
+                  activeIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Inspiration tab selected',
+                      child: Icon(Icons.lightbulb),
+                    ),
+                  ),
+                  label: 'Inspire',
+                  tooltip: 'Inspiration & Discovery',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Navigate to Profile tab',
+                      child: Icon(Icons.person_outline),
+                    ),
+                  ),
+                  activeIcon: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: Semantics(
+                      label: 'Profile tab selected',
+                      child: Icon(Icons.person),
+                    ),
+                  ),
+                  label: 'Profile',
+                  tooltip: 'User Profile',
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: colorScheme.surface,
-        selectedItemColor: colorScheme.primary,
-        unselectedItemColor: colorScheme.onSurfaceVariant,
-        selectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
-        iconSize: 24,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-            tooltip: 'Home Screen',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checkroom_outlined),
-            activeIcon: Icon(Icons.checkroom),
-            label: 'Wardrobe',
-            tooltip: 'Wardrobe Management',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_awesome_outlined),
-            activeIcon: Icon(Icons.auto_awesome),
-            label: 'Style',
-            tooltip: 'Style Assistant',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.groups_outlined),
-            activeIcon: Icon(Icons.groups),
-            label: 'Social',
-            tooltip: 'Social Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-            tooltip: 'User Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -427,6 +562,8 @@ class _PlaceholderScreen extends StatelessWidget {
         return 'Digital closet organization, outfit planning, and clothing item management.';
       case 'Style':
         return 'AI-powered styling assistant with outfit suggestions and fashion advice.';
+      case 'Inspire Me':
+        return 'Style inspiration, trend discovery, and personalized fashion recommendations.';
       case 'Social':
         return 'Fashion community features, outfit sharing, and style inspiration.';
       case 'Profile':

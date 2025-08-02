@@ -1,26 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 // Import screens
-import '../../features/authentication/presentation/screens/splash_screen.dart';
 import '../../features/authentication/presentation/screens/login_screen.dart';
 import '../../features/authentication/presentation/screens/onboarding/onboarding_screen.dart';
-import '../../features/home/presentation/screens/main_screen.dart';
+import '../../features/home/presentation/pages/main_screen.dart';
+import '../../features/home/presentation/pages/splash_screen.dart';
+import '../../features/authentication/presentation/controllers/auth_controller.dart';
+import '../../features/wardrobe/presentation/screens/add_clothing_item_screen.dart';
 
-/// The main router for the Aura application.
-/// Defines the core navigation structure including splash, auth, onboarding, and main app flows.
-final GoRouter appRouter = GoRouter(
-  debugLogDiagnostics: true,
-  initialLocation: '/',
-  routes: <RouteBase>[
-    // Root route - redirects to splash screen
-    GoRoute(
-      path: '/',
-      redirect: (BuildContext context, GoRouterState state) => '/splash',
-    ),
-    
+/// Router provider for the Aura application with authentication-aware routing
+final routerProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    debugLogDiagnostics: true,
+    initialLocation: '/splash',
+    redirect: (BuildContext context, GoRouterState state) {
+      return _handleRedirect(ref, context, state);
+    },
+    routes: _buildRoutes(),
+    errorBuilder: _buildErrorScreen,
+  );
+});
+
+/// Handle redirect logic based on authentication and onboarding state
+String? _handleRedirect(Ref ref, BuildContext context, GoRouterState state) {
+  final currentPath = state.fullPath ?? '/';
+  
+  // Allow splash screen to always load first
+  if (currentPath == '/splash') {
+    return null;
+  }
+  
+  // Get authentication state
+  final authState = ref.read(authControllerProvider);
+  
+  return authState.when(
+    data: (user) {
+      final isAuthenticated = user != null;
+      
+      if (!isAuthenticated) {
+        // User not authenticated - redirect to auth flow
+        if (currentPath.startsWith('/auth/') || currentPath == '/onboarding') {
+          return null; // Allow auth and onboarding screens
+        }
+        return '/auth/login';
+      }
+      
+      // User is authenticated - redirect to main app
+      if (currentPath.startsWith('/auth/') || currentPath == '/splash') {
+        return '/main';
+      }
+      
+      return null; // Allow access to current route
+    },
+    loading: () {
+      // Still loading auth state - stay on splash or current route
+      if (currentPath == '/splash') {
+        return null;
+      }
+      return '/splash';
+    },
+    error: (_, __) {
+      // Auth error - redirect to login
+      if (currentPath.startsWith('/auth/')) {
+        return null;
+      }
+      return '/auth/login';
+    },
+  );
+}
+
+/// Build route configuration
+List<RouteBase> _buildRoutes() {
+  return [
     // Splash Screen Route
-    // Initial loading screen shown when app starts
     GoRoute(
       path: '/splash',
       name: 'splash',
@@ -29,18 +83,42 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     
-    // Login Screen Route
-    // Authentication screen for user login
+    // Authentication Routes
     GoRoute(
-      path: '/login',
-      name: 'login',
-      builder: (BuildContext context, GoRouterState state) {
-        return const LoginScreen();
+      path: '/auth',
+      redirect: (context, state) {
+        // Redirect /auth to /auth/login
+        if (state.fullPath == '/auth') {
+          return '/auth/login';
+        }
+        return null;
       },
+      routes: [
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (BuildContext context, GoRouterState state) {
+            return const LoginScreen();
+          },
+        ),
+        GoRoute(
+          path: '/register',
+          name: 'register',
+          builder: (BuildContext context, GoRouterState state) {
+            return const RegisterScreenPlaceholder();
+          },
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          name: 'forgotPassword',
+          builder: (BuildContext context, GoRouterState state) {
+            return const ForgotPasswordScreenPlaceholder();
+          },
+        ),
+      ],
     ),
     
-    // Onboarding Screen Route
-    // First-time user experience and setup
+    // Onboarding Route
     GoRoute(
       path: '/onboarding',
       name: 'onboarding',
@@ -49,288 +127,183 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     
-    // Main App Home Route
-    // Primary authenticated area with bottom navigation
+    // Main App Route (authenticated area)
     GoRoute(
-      path: '/home',
-      name: 'home',
+      path: '/main',
+      name: 'main',
       builder: (BuildContext context, GoRouterState state) {
         return const MainScreen();
       },
-      routes: const <RouteBase>[
-        // Sub-routes for main app sections can be added here
-        // Example: /home/profile, /home/settings, etc.
+      routes: [
+        // Profile sub-route
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (BuildContext context, GoRouterState state) {
+            return const ProfileScreenPlaceholder();
+          },
+        ),
+        // Settings sub-route
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (BuildContext context, GoRouterState state) {
+            return const SettingsScreenPlaceholder();
+          },
+        ),
       ],
     ),
     
-    // Settings Route
-    // App configuration and user preferences
+    // Wardrobe Routes (outside main to be accessible independently)
     GoRoute(
-      path: '/settings',
-      name: 'settings',
-      builder: (BuildContext context, GoRouterState state) {
-        return const SettingsScreenPlaceholder();
+      path: '/wardrobe',
+      redirect: (context, state) {
+        // Redirect /wardrobe to main wardrobe tab
+        if (state.fullPath == '/wardrobe') {
+          return '/main';
+        }
+        return null;
       },
+      routes: [
+        GoRoute(
+          path: '/add',
+          name: 'addClothingItem',
+          builder: (BuildContext context, GoRouterState state) {
+            return const AddClothingItemScreen();
+          },
+        ),
+        GoRoute(
+          path: '/item/:itemId',
+          name: 'clothingItemDetail',
+          builder: (BuildContext context, GoRouterState state) {
+            final itemId = state.pathParameters['itemId']!;
+            return ClothingItemDetailScreenPlaceholder(itemId: itemId);
+          },
+        ),
+      ],
     ),
     
-    // Profile Route
-    // User profile management
+    // Legacy routes for backward compatibility
     GoRoute(
-      path: '/profile',
-      name: 'profile',
-      builder: (BuildContext context, GoRouterState state) {
-        return const ProfileScreenPlaceholder();
-      },
+      path: '/home',
+      redirect: (context, state) => '/main',
     ),
-  ],
-  
-  // Error handling for unknown routes
-  errorBuilder: (BuildContext context, GoRouterState state) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Page Not Found'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Page not found: ${state.uri}',
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go('/'),
-              child: const Text('Go Home'),
-            ),
-          ],
-        ),
-      ),
-    );
-  },
-);
-
-/// Placeholder screen for Splash functionality
-/// Will be replaced with actual SplashScreen implementation
-class SplashScreenPlaceholder extends StatelessWidget {
-  const SplashScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Scaffold(
-      backgroundColor: theme.colorScheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.auto_awesome,
-              size: 80,
-              color: theme.colorScheme.onPrimary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Aura',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'AI-Powered Personal Assistant',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 32),
-            CircularProgressIndicator(
-              color: theme.colorScheme.onPrimary,
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => context.go('/login'),
-              child: Text(
-                'Skip to Login (Dev)',
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ];
 }
 
-/// Placeholder screen for Onboarding functionality
-/// Will be replaced with actual OnboardingScreen implementation
-class OnboardingScreenPlaceholder extends StatelessWidget {
-  const OnboardingScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome to Aura'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.waving_hand,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Onboarding Screen',
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'User onboarding flow will be implemented here',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => context.go('/login'),
-                    child: const Text('Back to Login'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => context.go('/home'),
-                    child: const Text('Complete Setup'),
-                  ),
-                ],
-              ),
-            ],
+/// Build error screen for unknown routes
+Widget _buildErrorScreen(BuildContext context, GoRouterState state) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Page Not Found'),
+    ),
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
           ),
-        ),
+          const SizedBox(height: 16),
+          const Text(
+            'Page Not Found',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'The page "${state.uri}" could not be found.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.go('/main'),
+            child: const Text('Go Home'),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
-/// Placeholder screen for Settings functionality
-/// Will be replaced with actual SettingsScreen implementation
-class SettingsScreenPlaceholder extends StatelessWidget {
-  const SettingsScreenPlaceholder({super.key});
+// Placeholder screens for routes not yet implemented
+class RegisterScreenPlaceholder extends StatelessWidget {
+  const RegisterScreenPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.settings,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Settings Screen',
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'App settings and preferences will be implemented here',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Back to Home'),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(title: const Text('Register')),
+      body: const Center(
+        child: Text('Register Screen - Coming Soon'),
       ),
     );
   }
 }
 
-/// Placeholder screen for Profile functionality
-/// Will be replaced with actual ProfileScreen implementation
+class ForgotPasswordScreenPlaceholder extends StatelessWidget {
+  const ForgotPasswordScreenPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Forgot Password')),
+      body: const Center(
+        child: Text('Forgot Password Screen - Coming Soon'),
+      ),
+    );
+  }
+}
+
 class ProfileScreenPlaceholder extends StatelessWidget {
   const ProfileScreenPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
+      appBar: AppBar(title: const Text('Profile')),
+      body: const Center(
+        child: Text('Profile Screen - Coming Soon'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: theme.colorScheme.primary,
-                child: Icon(
-                  Icons.person,
-                  size: 40,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Profile Screen',
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'User profile management will be implemented here',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => context.go('/settings'),
-                    child: const Text('Settings'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => context.go('/home'),
-                    child: const Text('Back to Home'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    );
+  }
+}
+
+class SettingsScreenPlaceholder extends StatelessWidget {
+  const SettingsScreenPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: const Center(
+        child: Text('Settings Screen - Coming Soon'),
+      ),
+    );
+  }
+}
+
+class ClothingItemDetailScreenPlaceholder extends StatelessWidget {
+  final String itemId;
+  
+  const ClothingItemDetailScreenPlaceholder({
+    super.key,
+    required this.itemId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Item Details')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Clothing Item Detail Screen - Coming Soon'),
+            const SizedBox(height: 16),
+            Text('Item ID: $itemId'),
+          ],
         ),
       ),
     );

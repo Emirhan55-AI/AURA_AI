@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../../../../core/error/failure.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../../authentication/providers.dart';
 import '../../domain/entities/user.dart';
 
@@ -114,6 +116,28 @@ class AuthController extends _$AuthController {
     }
   }
 
+  /// Validates stored authentication token
+  /// Called during app initialization to restore authentication state
+  Future<void> validateToken() async {
+    try {
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      final token = await secureStorage.getAccessToken();
+      
+      if (token == null) {
+        state = const AsyncData(null);
+        return;
+      }
+
+      // Validate token by attempting to get current user
+      await refreshUser();
+    } catch (error) {
+      // Clear invalid token
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      await secureStorage.clearUserData();
+      state = const AsyncData(null);
+    }
+  }
+
   /// Checks if a user is currently authenticated
   bool get isAuthenticated {
     return state.asData?.value != null;
@@ -123,5 +147,22 @@ class AuthController extends _$AuthController {
   /// Returns null if no user is authenticated or if state is loading/error
   User? get currentUser {
     return state.asData?.value;
+  }
+
+  /// Logs out the current user by clearing authentication data
+  Future<void> logout() async {
+    try {
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      await secureStorage.clearUserData();
+      
+      // Clear the Supabase session if exists
+      final supabaseClient = supabase.Supabase.instance.client;
+      await supabaseClient.auth.signOut();
+      
+      state = const AsyncData(null);
+    } catch (error) {
+      // Even if logout fails, clear local state
+      state = const AsyncData(null);
+    }
   }
 }
