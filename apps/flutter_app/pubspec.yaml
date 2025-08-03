@@ -86,8 +86,8 @@ dependencies:
   # Image Picker - Camera and Gallery
   image_picker: ^1.0.4
   
-  # Image Cropper - Image Editing
-  image_cropper: ^5.0.1
+  # Image Cropper - Image Editing (temporarily disabled for web compatibility)
+  # image_cropper: ^5.0.1
   
   # Path utilities
   path: ^1.9.0

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../social/presentation/screens/social_post_detail_screen_simple.dart';
 
 /// App tab controller that provides the core navigation structure for the Aura app
 /// Features a bottom navigation bar with 5 main sections and consistent app bar
 /// Manages local state for tab switching and displays appropriate content
-class AppTabController extends StatefulWidget {
+class AppTabController extends ConsumerStatefulWidget {
   const AppTabController({super.key});
 
   @override
-  State<AppTabController> createState() => _AppTabControllerState();
+  ConsumerState<AppTabController> createState() => _AppTabControllerState();
 }
 
-class _AppTabControllerState extends State<AppTabController>
+class _AppTabControllerState extends ConsumerState<AppTabController>
     with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _animationController;
@@ -50,10 +52,10 @@ class _AppTabControllerState extends State<AppTabController>
       color: Color(0xFF6B46C1),
     ),
     
-    // Wardrobe Screen Placeholder
+    // Wardrobe Screen Placeholder (temporarily disabled due to build issues)
     _PlaceholderScreen(
       title: 'Wardrobe',
-      subtitle: 'Organize and manage your clothing',
+      subtitle: 'Digital closet management',
       icon: Icons.checkroom_outlined,
       color: Color(0xFF059669),
     ),
@@ -66,20 +68,15 @@ class _AppTabControllerState extends State<AppTabController>
       color: Color(0xFFDC2626),
     ),
     
-    // Inspire Me Screen Placeholder
-    _PlaceholderScreen(
-      title: 'Inspire Me',
-      subtitle: 'Discover new styles and inspiration',
-      icon: Icons.lightbulb_outlined,
-      color: Color(0xFF2563EB),
-    ),
+    // Social Screen - ACTUAL Social Post Detail Implementation
+    SocialPostDetailScreen(),
     
-    // Profile Screen Placeholder
+    // Profile Screen Placeholder (temporarily disabled)
     _PlaceholderScreen(
       title: 'Profile',
-      subtitle: 'Your personal style profile',
+      subtitle: 'Personal settings & style preferences',
       icon: Icons.person_outline,
-      color: Color(0xFF7C2D12),
+      color: Color(0xFF7C3AED),
     ),
   ];
 
@@ -271,15 +268,15 @@ class _AppTabControllerState extends State<AppTabController>
           ),
           BottomNavigationBarItem(
             icon: Semantics(
-              label: 'Navigate to Inspiration tab',
-              child: Icon(Icons.lightbulb_outlined),
+              label: 'Navigate to Social tab',
+              child: Icon(Icons.people_outline),
             ),
             activeIcon: Semantics(
-              label: 'Inspiration tab selected',
-              child: Icon(Icons.lightbulb),
+              label: 'Social tab selected',
+              child: Icon(Icons.people),
             ),
-            label: 'Inspire',
-            tooltip: 'Inspiration & Discovery',
+            label: 'Social',
+            tooltip: 'Social & Community',
           ),
           BottomNavigationBarItem(
             icon: Semantics(
