@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
+// import 'package:image_cropper/image_cropper.dart'; // Temporarily disabled
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
 
@@ -154,6 +154,9 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
         imageError: null,
       );
 
+      // Temporarily skip cropping functionality
+      // TODO: Re-enable when image_cropper package is available
+      /*
       final CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: state.pickedImage!.path,
         aspectRatioPresets: [
@@ -179,10 +182,12 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
           ),
         ],
       );
+      */
 
-      if (croppedFile != null) {
-        // Create new XFile from cropped file
-        final XFile croppedXFile = XFile(croppedFile.path);
+      // For now, use the original picked image without cropping
+      final croppedXFile = state.pickedImage;
+      
+      if (croppedXFile != null) {
         state = state.copyWith(
           pickedImage: croppedXFile,
           isImageLoading: false,
@@ -195,7 +200,7 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
     } catch (e) {
       state = state.copyWith(
         isImageLoading: false,
-        imageError: 'Failed to crop image: ${e.toString()}',
+        imageError: 'Failed to process image: ${e.toString()}',
       );
     }
   }
@@ -271,7 +276,7 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
       );
 
       // Simulate AI processing delay
-      await Future.delayed(const Duration(seconds: 3));
+      await Future<void>.delayed(const Duration(seconds: 3));
 
       // Mock AI response - in real implementation, this would be an actual AI service call
       final mockTags = {'casual', 'summer', 'cotton', 'comfortable'};
@@ -322,7 +327,7 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
 
       // In a real implementation, you would upload the image and create the item
       // For now, we'll simulate the save operation
-      await Future.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       // Mock successful save
       state = state.copyWith(

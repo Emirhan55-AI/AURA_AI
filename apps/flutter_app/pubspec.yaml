@@ -91,6 +91,14 @@ dependencies:
   
   # Path utilities
   path: ^1.9.0
+  
+  # Calendar Integration
+  table_calendar: ^3.0.9
+  device_calendar: ^4.3.2
+  permission_handler: ^11.3.1
+  
+  # WebSocket support for AI backend
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   flutter_test:

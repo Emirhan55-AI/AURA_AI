@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../social/presentation/screens/social_post_detail_screen_simple.dart';
+import '../screens/home_screen.dart';
+import '../../../wardrobe/presentation/screens/wardrobe_home_screen.dart';
+import '../../../style_assistant/presentation/screens/style_assistant_screen.dart';
+import '../../../social/presentation/screens/social_feed_screen.dart';
+import '../../../user_profile/presentation/screens/user_profile_screen.dart';
 
 /// App tab controller that provides the core navigation structure for the Aura app
 /// Features a bottom navigation bar with 5 main sections and consistent app bar
@@ -41,43 +45,22 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
     super.dispose();
   }
 
-  /// Placeholder widgets for each main section
-  /// These will be replaced with actual screen implementations
+  /// Screen widgets for each main section
   static const List<Widget> _screenOptions = <Widget>[
-    // Home Screen Placeholder
-    _PlaceholderScreen(
-      title: 'Home',
-      subtitle: 'Your style journey starts here',
-      icon: Icons.home_outlined,
-      color: Color(0xFF6B46C1),
-    ),
+    // Home Screen
+    HomeScreen(),
     
-    // Wardrobe Screen Placeholder (temporarily disabled due to build issues)
-    _PlaceholderScreen(
-      title: 'Wardrobe',
-      subtitle: 'Digital closet management',
-      icon: Icons.checkroom_outlined,
-      color: Color(0xFF059669),
-    ),
+    // Wardrobe Screen - Fully functional digital closet management
+    WardrobeHomeScreen(),
     
-    // Style Assistant Screen Placeholder
-    _PlaceholderScreen(
-      title: 'Style Assistant',
-      subtitle: 'AI-powered styling recommendations',
-      icon: Icons.auto_awesome_outlined,
-      color: Color(0xFFDC2626),
-    ),
+    // Style Assistant Screen - AI-powered styling chat interface
+    StyleAssistantScreen(),
     
-    // Social Screen - ACTUAL Social Post Detail Implementation
-    SocialPostDetailScreen(),
+    // Social Screen - Community feed and interactions
+    SocialFeedScreen(),
     
-    // Profile Screen Placeholder (temporarily disabled)
-    _PlaceholderScreen(
-      title: 'Profile',
-      subtitle: 'Personal settings & style preferences',
-      icon: Icons.person_outline,
-      color: Color(0xFF7C3AED),
-    ),
+    // Profile Screen - User profile and settings
+    UserProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -293,175 +276,5 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
         ],
       ),
     );
-  }
-}
-
-/// Placeholder screen widget for main sections
-/// Provides a consistent design while actual screens are implemented
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const _PlaceholderScreen({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Main icon with gradient background
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withOpacity(0.8),
-                    color,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                size: 60,
-                color: Colors.white,
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Title
-            Text(
-              title,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Subtitle
-            Text(
-              subtitle,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            
-            const SizedBox(height: 48),
-            
-            // Coming soon badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.construction_outlined,
-                    size: 16,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Coming Soon',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Additional info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'What\'s Next:',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _getFeatureDescription(title),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getFeatureDescription(String title) {
-    switch (title) {
-      case 'Home':
-        return 'Dashboard with style insights, recent outfits, and personalized recommendations.';
-      case 'Wardrobe':
-        return 'Digital closet organization, outfit planning, and clothing item management.';
-      case 'Style':
-        return 'AI-powered styling assistant with outfit suggestions and fashion advice.';
-      case 'Inspire Me':
-        return 'Style inspiration, trend discovery, and personalized fashion recommendations.';
-      case 'Social':
-        return 'Fashion community features, outfit sharing, and style inspiration.';
-      case 'Profile':
-        return 'Personal style preferences, account settings, and style history.';
-      default:
-        return 'This feature is currently under development.';
-    }
   }
 }

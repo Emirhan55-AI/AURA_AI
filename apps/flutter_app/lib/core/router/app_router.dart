@@ -7,17 +7,23 @@ import '../../features/authentication/presentation/screens/login_screen.dart';
 import '../../features/authentication/presentation/screens/onboarding/onboarding_screen.dart';
 import '../../features/home/presentation/pages/main_screen.dart';
 import '../../features/home/presentation/pages/splash_screen.dart';
+import '../../features/home/presentation/screens/app_tab_controller.dart';
 import '../../features/authentication/presentation/controllers/auth_controller.dart';
 import '../../features/wardrobe/presentation/screens/add_clothing_item_screen.dart';
+import '../../features/wardrobe/presentation/screens/outfit_creation_screen.dart';
+import '../../features/style_assistant/presentation/screens/style_challenges_screen.dart';
+import '../../features/style_assistant/presentation/screens/challenge_detail_screen.dart';
+import '../../features/style_assistant/presentation/widgets/challenges/challenge_card.dart';
 
 /// Router provider for the Aura application with authentication-aware routing
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     debugLogDiagnostics: true,
-    initialLocation: '/splash',
-    redirect: (BuildContext context, GoRouterState state) {
-      return _handleRedirect(ref, context, state);
-    },
+    initialLocation: '/main', // Directly start at main screen
+    // TEMPORARY: Remove redirect for testing
+    // redirect: (BuildContext context, GoRouterState state) {
+    //   return _handleRedirect(ref, context, state);
+    // },
     routes: _buildRoutes(),
     errorBuilder: _buildErrorScreen,
   );
@@ -32,43 +38,12 @@ String? _handleRedirect(Ref ref, BuildContext context, GoRouterState state) {
     return null;
   }
   
-  // Get authentication state
-  final authState = ref.read(authControllerProvider);
+  // TEMPORARY: Skip authentication for testing - redirect to main
+  if (currentPath.startsWith('/auth/') || currentPath == '/') {
+    return '/main';
+  }
   
-  return authState.when(
-    data: (user) {
-      final isAuthenticated = user != null;
-      
-      if (!isAuthenticated) {
-        // User not authenticated - redirect to auth flow
-        if (currentPath.startsWith('/auth/') || currentPath == '/onboarding') {
-          return null; // Allow auth and onboarding screens
-        }
-        return '/auth/login';
-      }
-      
-      // User is authenticated - redirect to main app
-      if (currentPath.startsWith('/auth/') || currentPath == '/splash') {
-        return '/main';
-      }
-      
-      return null; // Allow access to current route
-    },
-    loading: () {
-      // Still loading auth state - stay on splash or current route
-      if (currentPath == '/splash') {
-        return null;
-      }
-      return '/splash';
-    },
-    error: (_, __) {
-      // Auth error - redirect to login
-      if (currentPath.startsWith('/auth/')) {
-        return null;
-      }
-      return '/auth/login';
-    },
-  );
+  return null;
 }
 
 /// Build route configuration
@@ -127,12 +102,12 @@ List<RouteBase> _buildRoutes() {
       },
     ),
     
-    // Main App Route (authenticated area)
+    // Main App Route (bypass authentication)
     GoRoute(
       path: '/main',
       name: 'main',
       builder: (BuildContext context, GoRouterState state) {
-        return const MainScreen();
+        return const AppTabController(); // Directly show the app tabs
       },
       routes: [
         // Profile sub-route
@@ -173,11 +148,37 @@ List<RouteBase> _buildRoutes() {
           },
         ),
         GoRoute(
+          path: '/create-outfit',
+          name: 'createOutfit',
+          builder: (BuildContext context, GoRouterState state) {
+            return const OutfitCreationScreen();
+          },
+        ),
+        GoRoute(
           path: '/item/:itemId',
           name: 'clothingItemDetail',
           builder: (BuildContext context, GoRouterState state) {
             final itemId = state.pathParameters['itemId']!;
             return ClothingItemDetailScreenPlaceholder(itemId: itemId);
+          },
+        ),
+      ],
+    ),
+    
+    // Style Assistant Routes
+    GoRoute(
+      path: '/style-challenges',
+      name: 'styleChallenges',
+      builder: (BuildContext context, GoRouterState state) {
+        return const StyleChallengesScreen();
+      },
+      routes: [
+        GoRoute(
+          path: ':id',
+          name: 'challengeDetail',
+          builder: (BuildContext context, GoRouterState state) {
+            final challenge = state.extra as StyleChallenge;
+            return ChallengeDetailScreen(challenge: challenge);
           },
         ),
       ],

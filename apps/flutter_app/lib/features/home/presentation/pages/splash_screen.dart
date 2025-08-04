@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/app_version_service.dart';
 import '../../../../core/services/preferences_service.dart';
@@ -55,29 +56,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _initializeApp() async {
     try {
       // Start with minimum splash duration
-      await Future.delayed(const Duration(milliseconds: 1500));
+      await Future.delayed(const Duration(milliseconds: 2000));
 
-      // Validate stored authentication token
-      await ref.read(authControllerProvider.notifier).validateToken();
+      // TEMPORARY: Skip authentication for testing
+      // await ref.read(authControllerProvider.notifier).validateToken();
 
-      // Check app version and updates
-      final versionInfo = await ref.read(currentAppVersionProvider.future);
-      final needsUpdate = await ref.read(appNeedsUpdateProvider.future);
+      // Check app version and updates (temporarily disabled)
+      // final versionInfo = await ref.read(currentAppVersionProvider.future);
+      // final needsUpdate = await ref.read(appNeedsUpdateProvider.future);
 
       // Log version information (for debugging)
-      debugPrint('App Version: ${versionInfo.version} (${versionInfo.buildNumber})');
-      debugPrint('Needs Update: $needsUpdate');
+      debugPrint('App Version: 1.0.0 (1)');
+      debugPrint('Needs Update: false');
 
-      // Initialize preferences service if needed
-      final preferencesService = ref.read(preferencesServiceProvider);
-      await preferencesService.getHasSeenOnboarding();
+      // Initialize preferences service if needed (temporarily disabled)
+      // final preferencesService = ref.read(preferencesServiceProvider);
+      // await preferencesService.getHasSeenOnboarding();
 
-      // Navigation will be handled by the router based on auth state
-      // Splash screen has completed its initialization tasks
+      // TEMPORARY: Manual navigation to main screen
+      if (mounted) {
+        // Use GoRouter to navigate to main screen
+        context.go('/main');
+      }
       
     } catch (error) {
       debugPrint('Splash screen initialization error: $error');
-      // Continue anyway - errors will be handled by the main router
+      // Continue anyway - navigate to main screen
+      if (mounted) {
+        context.go('/main');
+      }
     }
   }
 

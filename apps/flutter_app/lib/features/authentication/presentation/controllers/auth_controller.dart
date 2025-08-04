@@ -133,7 +133,7 @@ class AuthController extends _$AuthController {
     } catch (error) {
       // Clear invalid token
       final secureStorage = ref.read(secureStorageServiceProvider);
-      await secureStorage.clearUserData();
+      await secureStorage.clearAll();
       state = const AsyncData(null);
     }
   }
@@ -153,7 +153,7 @@ class AuthController extends _$AuthController {
   Future<void> logout() async {
     try {
       final secureStorage = ref.read(secureStorageServiceProvider);
-      await secureStorage.clearUserData();
+      await secureStorage.clearAll();
       
       // Clear the Supabase session if exists
       final supabaseClient = supabase.Supabase.instance.client;

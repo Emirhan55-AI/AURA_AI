@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/chat_list_view.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/quick_action_chips.dart';
@@ -71,6 +72,11 @@ class _StyleAssistantScreenState extends ConsumerState<StyleAssistantScreen> {
           ),
           onPressed: _toggleVoiceMode,
           tooltip: isVoiceMode ? 'Turn off voice mode' : 'Turn on voice mode',
+        ),
+        IconButton(
+          icon: const Icon(Icons.style),
+          onPressed: () => context.push('/style-challenges'),
+          tooltip: 'Style Challenges',
         ),
         IconButton(
           icon: const Icon(Icons.refresh_outlined),

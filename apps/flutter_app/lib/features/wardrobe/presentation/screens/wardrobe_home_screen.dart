@@ -753,12 +753,29 @@ class _WardrobeHomeScreenState extends ConsumerState<WardrobeHomeScreen>
   }
 
   Widget _buildAddItemFAB(ThemeData theme) {
-    return FloatingActionButton.extended(
-      onPressed: () => _navigateToAddItem(),
-      icon: const Icon(Icons.add),
-      label: const Text('Add Item'),
-      backgroundColor: theme.colorScheme.primary,
-      foregroundColor: theme.colorScheme.onPrimary,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Create Outfit Button
+        FloatingActionButton(
+          heroTag: "createOutfit",
+          onPressed: () => _navigateToCreateOutfit(),
+          backgroundColor: theme.colorScheme.tertiary,
+          foregroundColor: theme.colorScheme.onTertiary,
+          tooltip: 'Create Outfit',
+          child: const Icon(Icons.palette),
+        ),
+        const SizedBox(height: 16),
+        // Add Item Button
+        FloatingActionButton.extended(
+          heroTag: "addItem",
+          onPressed: () => _navigateToAddItem(),
+          icon: const Icon(Icons.add),
+          label: const Text('Add Item'),
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+        ),
+      ],
     );
   }
 
@@ -795,5 +812,9 @@ class _WardrobeHomeScreenState extends ConsumerState<WardrobeHomeScreen>
 
   void _navigateToAddItem() {
     context.push('/wardrobe/add');
+  }
+
+  void _navigateToCreateOutfit() {
+    context.push('/wardrobe/create-outfit');
   }
 }

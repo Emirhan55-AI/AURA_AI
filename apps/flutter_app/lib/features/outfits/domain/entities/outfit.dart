@@ -45,6 +45,34 @@ class Outfit {
     this.deletedAt,
   });
 
+  /// Creates an empty outfit for initial state
+  factory Outfit.empty() {
+    final now = DateTime.now();
+    return Outfit(
+      id: '',
+      userId: '',
+      name: '',
+      description: '',
+      clothingItemIds: const [],
+      occasion: null,
+      season: null,
+      weather: null,
+      style: null,
+      tags: const [],
+      imageUrl: null,
+      metadata: null,
+      isFavorite: false,
+      isPublic: false,
+      wearCount: 0,
+      lastWorn: null,
+      rating: null,
+      colors: const [],
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    );
+  }
+
   @override
   String toString() {
     return 'Outfit(id: $id, userId: $userId, name: $name, occasion: $occasion, wearCount: $wearCount)';
