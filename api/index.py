@@ -10,6 +10,7 @@ import io
 from PIL import Image
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import google.generativeai as genai
 from supabase import create_client, Client
@@ -60,6 +61,15 @@ app = FastAPI(
     version="7.0.0" # Final Fix
 )
 
+# CORS middleware ekle (mobil uygulamalar için)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Üretimde daha spesifik domain'ler kullanın
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 async def root():
@@ -69,14 +79,34 @@ async def root():
 @app.post("/process-image/")
 async def process_image(file: UploadFile = File(...)):
     try:
+        print(f"🔍 DEBUG: Received file - Content-Type: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'Unknown'}")
+        
         if not file.content_type or not file.content_type.startswith("image/"):
+            print(f"❌ DEBUG: Invalid content type: {file.content_type}")
             raise HTTPException(
                 status_code=400,
                 detail="Lütfen geçerli bir resim dosyası yükleyin."
             )
         
+        print("🔍 DEBUG: Reading image bytes...")
         image_bytes = await file.read()
+        print(f"🔍 DEBUG: Image bytes read successfully, length: {len(image_bytes)}")
+        
+        if len(image_bytes) == 0:
+            print("❌ DEBUG: Empty image file")
+            raise HTTPException(
+                status_code=400,
+                detail="Boş resim dosyası yüklendi."
+            )
+        
+        print("🔍 DEBUG: Opening image with PIL...")
         image = Image.open(io.BytesIO(image_bytes))
+        print(f"🔍 DEBUG: Image opened successfully - Format: {image.format}, Size: {image.size}, Mode: {image.mode}")
+        
+        # Resmi RGB moduna çevir (mobil uygulamalardan gelen resimler bazen farklı modlarda olabilir)
+        if image.mode != 'RGB':
+            print(f"🔍 DEBUG: Converting image from {image.mode} to RGB")
+            image = image.convert('RGB')
         
         prompt = """Bu resimdeki giysiyi analiz et. Giysinin kategorisini (örneğin: Gömlek, Pantolon, Elbise, Ceket), ana rengini (örneğin: Mavi, Kırmızı, Siyah), desenini (örneğin: Düz, Çizgili, Ekose, Çiçekli), stilini (örneğin: Günlük, Resmi, Spor), mevsimini (örneğin: Yazlık, Kışlık, Mevsimlik) ve kumaşını (örneğin: Kot, Keten, Penye) belirle.
 
@@ -84,15 +114,21 @@ Cevabını, başka hiçbir açıklama veya metin eklemeden, SADECE aşağıdaki 
 
 Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON metnini döndür."""
         
+        print("🔍 DEBUG: Sending request to Gemini Vision...")
         response = vision_model.generate_content([prompt, image])
+        print(f"🔍 DEBUG: Gemini response received, length: {len(response.text) if response.text else 0}")
+        
         ai_response_text = response.text.strip()
+        print(f"🔍 DEBUG: AI response text: {ai_response_text}")
         
         try:
             analysis_result = json.loads(ai_response_text)
             required_keys = ["kategori", "renk", "desen", "stil", "mevsim", "kumas"]
             if not all(key in analysis_result for key in required_keys):
+                print(f"❌ DEBUG: Missing keys in AI response: {analysis_result}")
                 raise ValueError("AI cevabında gerekli anahtarlar eksik")
             
+            print("✅ DEBUG: Analysis completed successfully")
             return JSONResponse(
                 status_code=200,
                 content={
@@ -102,14 +138,22 @@ Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON
                 }
             )
         except (json.JSONDecodeError, ValueError) as e:
+            print(f"❌ DEBUG: JSON parsing error: {e}")
+            print(f"❌ DEBUG: Raw AI response: {ai_response_text}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Yapay zeka geçerli bir formatta cevap vermedi: {e}"
+                detail=f"Yapay zeka geçerli bir formatta cevap vermedi: {str(e)}"
             )
+    except HTTPException:
+        # HTTPException'ları olduğu gibi geçir
+        raise
     except Exception as e:
+        print(f"💥 DEBUG: Unexpected error: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"💥 DEBUG: Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Resim işlenirken bir hata oluştu: {str(e)}"
+            detail=f"Resim işlenirken bir hata oluştu: {type(e).__name__}: {str(e)}"
         )
 
 
