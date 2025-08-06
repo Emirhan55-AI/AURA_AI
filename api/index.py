@@ -64,16 +64,31 @@ app = FastAPI(
 # CORS middleware ekle (mobil uygulamalar için)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Üretimde daha spesifik domain'ler kullanın
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000", "http://localhost:8083", "http://127.0.0.1:3000", "http://127.0.0.1:8083"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
 )
 
 
 @app.get("/")
 async def root():
     return {"message": "Aura AI Backend - Kıyafet Analizi Servisi Çalışıyor!"}
+
+
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle OPTIONS requests for CORS preflight"""
+    return JSONResponse(
+        status_code=200,
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
+            "Access-Control-Max-Age": "86400"
+        }
+    )
 
 
 @app.post("/process-image/")
@@ -135,6 +150,11 @@ Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON
                     "success": True,
                     "data": analysis_result,
                     "message": "Kıyafet analizi başarıyla tamamlandı"
+                },
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With"
                 }
             )
         except (json.JSONDecodeError, ValueError) as e:
@@ -201,6 +221,11 @@ async def get_recommendation(request: RecommendationRequest):
                 "success": True,
                 "cevap": ai_response.text,
                 "message": "Kombin önerisi başarıyla oluşturuldu"
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With"
             }
         )
     except Exception as e:
