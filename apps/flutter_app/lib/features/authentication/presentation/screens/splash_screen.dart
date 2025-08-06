@@ -237,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen>
         
         if (hasSeenOnboarding) {
           // User has seen onboarding before - go to login
-          _navigateToRoute('/login');
+          _navigateToRoute('/auth/login');
         } else {
           // First time user - go to onboarding
           _navigateToRoute('/onboarding');

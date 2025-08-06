@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/ui/system_state_widget.dart';
+import '../controllers/favorites_controller.dart';
 import '../widgets/favorites/favorite_item_models.dart';
 import '../widgets/favorites/favorites_tab_bar.dart';
 import '../widgets/favorites/favorites_tab_bar_view.dart';
@@ -18,21 +20,20 @@ import '../widgets/favorites/favorites_multi_select_toolbar.dart';
 /// - Grid/List view toggle
 /// - Multi-select mode for bulk operations
 /// - Empty states and error handling
-class FavoritesScreen extends StatefulWidget {
+/// - Real backend integration with Supabase
+class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
+  ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen>
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
   bool _isGridView = true;
   bool _isSelectionMode = false;
   final Set<String> _selectedItems = <String>{};
-  bool _isLoading = false;
-  bool _hasError = false;
 
   final List<FavoriteTabType> _tabs = [
     FavoriteTabType.products,
@@ -196,16 +197,26 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // Implement remove logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Removed ${_selectedItems.length} items from favorites'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              _exitSelectionMode();
+              
+              // Remove favorites using real backend
+              final controller = ref.read(favoritesControllerProvider.notifier);
+              final success = await controller.removeFavorites(_selectedItems.toList());
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success 
+                        ? 'Removed ${_selectedItems.length} items from favorites'
+                        : 'Failed to remove items. Please try again.',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                _exitSelectionMode();
+              }
             },
             child: const Text('Remove'),
           ),
@@ -214,6 +225,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
     );
   }
 
+  @override
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -242,14 +254,10 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                 actions: [
                   if (!_isSelectionMode) ...[
                     IconButton(
-                      onPressed: () {
-                        // Implement search functionality
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Search functionality coming soon!'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                      onPressed: () async {
+                        // Search favorites functionality
+                        final controller = ref.read(favoritesControllerProvider.notifier);
+                        await controller.searchFavorites(''); // Implement search UI
                       },
                       icon: Icon(
                         Icons.search,
@@ -315,8 +323,28 @@ class _FavoritesScreenState extends State<FavoritesScreen>
   }
 
   Widget _buildContent(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
-    if (_isLoading) {
-      return const Center(
+    final favoritesAsyncValue = ref.watch(favoritesControllerProvider);
+    
+    return favoritesAsyncValue.when(
+      data: (favorites) {
+        if (favorites.isEmpty) {
+          return const SystemStateWidget(
+            title: 'No Favorites Yet',
+            message: 'Start favoriting items to see them here.',
+            icon: Icons.favorite_border,
+          );
+        }
+        
+        return FavoritesTabBarView(
+          tabController: _tabController,
+          tabs: _tabs,
+          isGridView: _isGridView,
+          onToggleView: _toggleView,
+          onItemTap: _onItemTap,
+          onItemLongPress: _onItemLongPress,
+        );
+      },
+      loading: () => const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -325,39 +353,16 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             Text('Loading Favorites...'),
           ],
         ),
-      );
-    }
-
-    if (_hasError) {
-      return SystemStateWidget(
+      ),
+      error: (error, stackTrace) => SystemStateWidget(
         title: 'Failed to Load Favorites',
         message: 'Please check your connection and try again.',
         icon: Icons.error_outline,
         onRetry: () {
-          setState(() {
-            _hasError = false;
-            _isLoading = true;
-          });
-          // Simulate loading
-          Future.delayed(const Duration(milliseconds: 1500), () {
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-          });
+          ref.read(favoritesControllerProvider.notifier).refresh();
         },
         retryText: 'Try Again',
-      );
-    }
-
-    return FavoritesTabBarView(
-      tabController: _tabController,
-      tabs: _tabs,
-      isGridView: _isGridView,
-      onToggleView: _toggleView,
-      onItemTap: _onItemTap,
-      onItemLongPress: _onItemLongPress,
+      ),
     );
   }
 }

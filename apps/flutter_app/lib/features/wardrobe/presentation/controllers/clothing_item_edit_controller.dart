@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/clothing_item.dart';
 import '../../domain/repositories/i_user_wardrobe_repository.dart';
 import '../../data/providers/wardrobe_providers.dart';
+import '../../../../core/providers/service_providers.dart';
 
 part 'clothing_item_edit_controller.g.dart';
 
@@ -197,16 +198,23 @@ class ClothingItemEditController extends _$ClothingItemEditController {
         imageState: const AsyncValue<void>.loading(),
       );
 
-      // Simulate image picker - in real implementation, use ImagePicker
       final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
       
       if (pickedFile != null) {
-        // In real implementation, upload the image and get URL
-        // For now, simulate with the file path
-        final imageUrl = pickedFile.path;
-        updateItemImage(imageUrl);
+        // Read image bytes
+        final bytes = await pickedFile.readAsBytes();
         
+        // Upload image to Supabase
+        final imageUploadService = ref.read(imageUploadServiceProvider);
+        final imageUrl = await imageUploadService.uploadClothingItemImageFromBytes(bytes);
+        
+        updateItemImage(imageUrl);
         state = state.copyWith(
           imageState: const AsyncValue<void>.data(null),
         );
@@ -245,6 +253,46 @@ class ClothingItemEditController extends _$ClothingItemEditController {
   /// Remove the item image
   void removeItemImage() {
     updateItemImage('');
+  }
+
+  /// Re-analyze current image with AI to suggest tags and properties
+  Future<void> reAnalyzeWithAI() async {
+    if (state.draftItem == null || state.draftItem!.imageUrl == null || state.draftItem!.imageUrl!.isEmpty) {
+      return;
+    }
+
+    try {
+      state = state.copyWith(
+        imageState: const AsyncValue<void>.loading(),
+      );
+
+      final aiTaggingService = ref.read(aiTaggingServiceProvider);
+      final analysis = await aiTaggingService.analyzeClothingImage(state.draftItem!.imageUrl!);
+      
+      // Update item with AI analysis results
+      if (state.draftItem != null) {
+        final currentTags = List<String>.from(state.draftItem!.tags ?? []);
+        final aiTagsList = analysis['tags'] as List<String>? ?? [];
+        
+        // Merge current tags with AI tags (avoid duplicates)
+        final allTags = <String>{...currentTags, ...aiTagsList}.toList();
+        
+        updateItemField((item) => item.copyWith(
+          category: analysis['category'] as String? ?? item.category,
+          color: analysis['color'] as String? ?? item.color,
+          tags: allTags,
+          aiTags: analysis, // Store full AI analysis results
+        ));
+      }
+      
+      state = state.copyWith(
+        imageState: const AsyncValue<void>.data(null),
+      );
+    } catch (e, stackTrace) {
+      state = state.copyWith(
+        imageState: AsyncValue<void>.error(e, stackTrace),
+      );
+    }
   }
 
   /// Save the edited item

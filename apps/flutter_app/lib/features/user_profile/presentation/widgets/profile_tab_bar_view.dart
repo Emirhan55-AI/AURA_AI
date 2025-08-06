@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'analytics_dashboard_widget.dart';
 
 /// Profile Tab Bar View Widget - Displays content for each profile tab
 /// 
@@ -8,7 +9,7 @@ import 'package:flutter/material.dart';
 /// - My Likes: List of liked posts
 /// - Social Shares: Grid of shared content
 /// - Communities: List of joined communities
-/// - Swap History: List of clothing swaps
+/// - Analytics: Enhanced wardrobe and style analytics
 class ProfileTabBarView extends StatelessWidget {
   final TabController tabController;
   final List<String> tabs;
@@ -40,8 +41,8 @@ class ProfileTabBarView extends StatelessWidget {
         return _buildSocialSharesTab(context);
       case 'Communities':
         return _buildCommunitiesTab(context);
-      case 'Swap History':
-        return _buildSwapHistoryTab(context);
+      case 'Analytics':
+        return _buildAnalyticsTab(context);
       default:
         return _buildPlaceholderTab(context, tabName);
     }
@@ -117,17 +118,10 @@ class ProfileTabBarView extends StatelessWidget {
     );
   }
 
-  /// Builds swap history tab with list layout
-  Widget _buildSwapHistoryTab(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return _buildListContent(
-      context,
-      'Swap History',
-      'Your clothing exchange history',
-      Icons.swap_horiz_outlined,
-      colorScheme.secondary,
-      _generateMockSwaps(),
+  /// Builds analytics tab with dashboard
+  Widget _buildAnalyticsTab(BuildContext context) {
+    return const SingleChildScrollView(
+      child: AnalyticsDashboardWidget(),
     );
   }
 
@@ -452,9 +446,5 @@ class ProfileTabBarView extends StatelessWidget {
 
   List<String> _generateMockCommunities() {
     return ['Sustainable Fashion', 'Vintage Lovers', 'Minimalist Style'];
-  }
-
-  List<String> _generateMockSwaps() {
-    return ['Swapped with @alice', 'Swapped with @bob', 'Swapped with @carol'];
   }
 }

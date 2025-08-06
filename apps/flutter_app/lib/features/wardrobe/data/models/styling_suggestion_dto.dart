@@ -84,7 +84,10 @@ class StylingSuggestionResponseDto with _$StylingSuggestionResponseDto {
 
   factory StylingSuggestionResponseDto.fromJson(Map<String, dynamic> json) => 
       _$StylingSuggestionResponseDtoFromJson(json);
+}
 
+/// Extension for converting DTO to domain entity
+extension StylingSuggestionResponseDtoExtension on StylingSuggestionResponseDto {
   /// Convert from DTO to domain entity
   StylingSuggestion toDomainEntity() {
     return StylingSuggestion(

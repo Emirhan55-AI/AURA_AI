@@ -2,53 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// Import screens
+// Import screens - Authentication
 import '../../features/authentication/presentation/screens/login_screen.dart';
+import '../../features/authentication/presentation/screens/register_screen.dart';
+import '../../features/authentication/presentation/screens/forgot_password_screen.dart';
 import '../../features/authentication/presentation/screens/onboarding/onboarding_screen.dart';
-import '../../features/home/presentation/pages/main_screen.dart';
+import '../../features/authentication/presentation/screens/onboarding/style_discovery_screen.dart';
+
+// Import screens - Home & Main Navigation
 import '../../features/home/presentation/pages/splash_screen.dart';
 import '../../features/home/presentation/screens/app_tab_controller.dart';
-import '../../features/authentication/presentation/controllers/auth_controller.dart';
+
+// Import screens - Camera
+import '../../features/camera/presentation/screens/camera_screen.dart';
+
+// Import screens - Wardrobe
+import '../../features/wardrobe/presentation/screens/wardrobe_home_screen.dart';
 import '../../features/wardrobe/presentation/screens/add_clothing_item_screen.dart';
+import '../../features/wardrobe/presentation/screens/clothing_item_detail_screen.dart';
 import '../../features/wardrobe/presentation/screens/outfit_creation_screen.dart';
+import '../../features/wardrobe/presentation/screens/simple_outfit_planner_screen.dart';
+import '../../features/wardrobe/presentation/screens/ai_styling_suggestions_screen.dart';
+import '../../features/wardrobe/presentation/screens/wardrobe_analytics_screen.dart';
+import '../../features/wardrobe/presentation/screens/wardrobe_planner_screen.dart';
+
+// Import screens - Style Assistant
+import '../../features/style_assistant/presentation/screens/style_assistant_screen.dart';
 import '../../features/style_assistant/presentation/screens/style_challenges_screen.dart';
-import '../../features/style_assistant/presentation/screens/challenge_detail_screen.dart';
-import '../../features/style_assistant/presentation/widgets/challenges/challenge_card.dart';
+
+// Import screens - Search
+import '../../features/search/presentation/screens/search_screen.dart';
+
+// Import screens - Social
+// Temporarily commented out due to compilation errors
+// import '../../features/social/presentation/screens/social_feed_screen.dart';
+// import '../../features/social/presentation/screens/social_post_detail_screen.dart';
+// import '../../features/social/presentation/screens/social_user_profile_screen.dart';
+// import '../../features/social/presentation/screens/create_post_screen.dart';
+
+// Import screens - User Profile
+import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
+import '../../features/user_profile/presentation/screens/favorites_screen.dart';
+import '../../features/user_profile/presentation/screens/settings_screen.dart';
+import '../../features/user_profile/presentation/screens/privacy_policy_screen.dart';
+import '../../features/user_profile/presentation/screens/terms_of_service_screen.dart';
+
+// Import screens - Swap Market
+import '../../features/swap_market/presentation/screens/swap_market_screen.dart';
+import '../../features/swap_market/presentation/screens/swap_listing_detail_screen.dart';
+import '../../features/swap_market/presentation/screens/create_swap_listing_screen.dart';
+import '../../features/swap_market/presentation/screens/pre_swap_chat_screen.dart';
+
+// Import screens - Privacy
+import '../../features/privacy/presentation/screens/privacy_consent_screen.dart';
+import '../../features/privacy/presentation/screens/privacy_data_management_screen.dart';
+
+// Import screens - Messaging
+import '../../features/messaging/presentation/screens/messaging_screen.dart';
+import '../../features/messaging/presentation/screens/chat_screen.dart';
+
+// Import screens - Notifications
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
+
+// Import core screens
+import '../../features/core/presentation/screens/supabase_test_screen.dart';
 
 /// Router provider for the Aura application with authentication-aware routing
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     debugLogDiagnostics: true,
-    initialLocation: '/main', // Directly start at main screen
-    // TEMPORARY: Remove redirect for testing
-    // redirect: (BuildContext context, GoRouterState state) {
-    //   return _handleRedirect(ref, context, state);
-    // },
+    initialLocation: '/splash', // Always start with splash screen
     routes: _buildRoutes(),
     errorBuilder: _buildErrorScreen,
   );
 });
 
-/// Handle redirect logic based on authentication and onboarding state
-String? _handleRedirect(Ref ref, BuildContext context, GoRouterState state) {
-  final currentPath = state.fullPath ?? '/';
-  
-  // Allow splash screen to always load first
-  if (currentPath == '/splash') {
-    return null;
-  }
-  
-  // TEMPORARY: Skip authentication for testing - redirect to main
-  if (currentPath.startsWith('/auth/') || currentPath == '/') {
-    return '/main';
-  }
-  
-  return null;
-}
-
 /// Build route configuration
 List<RouteBase> _buildRoutes() {
   return [
+    // Debug/Test Routes
+    GoRoute(
+      path: '/supabase-test',
+      name: 'supabase-test',
+      builder: (BuildContext context, GoRouterState state) {
+        return const SupabaseTestScreen();
+      },
+    ),
+    
     // Splash Screen Route
     GoRoute(
       path: '/splash',
@@ -80,14 +120,14 @@ List<RouteBase> _buildRoutes() {
           path: '/register',
           name: 'register',
           builder: (BuildContext context, GoRouterState state) {
-            return const RegisterScreenPlaceholder();
+            return const RegisterScreen();
           },
         ),
         GoRoute(
           path: '/forgot-password',
           name: 'forgotPassword',
           builder: (BuildContext context, GoRouterState state) {
-            return const ForgotPasswordScreenPlaceholder();
+            return const ForgotPasswordScreen();
           },
         ),
       ],
@@ -102,44 +142,49 @@ List<RouteBase> _buildRoutes() {
       },
     ),
     
-    // Main App Route (bypass authentication)
+    // Style Discovery Route
+    GoRoute(
+      path: '/style-discovery',
+      name: 'styleDiscovery',
+      builder: (BuildContext context, GoRouterState state) {
+        return const StyleDiscoveryScreen();
+      },
+    ),
+    
+    // Main App Route (tab controller with nested routes)
     GoRoute(
       path: '/main',
       name: 'main',
       builder: (BuildContext context, GoRouterState state) {
-        return const AppTabController(); // Directly show the app tabs
+        return const AppTabController();
       },
-      routes: [
-        // Profile sub-route
-        GoRoute(
-          path: '/profile',
-          name: 'profile',
-          builder: (BuildContext context, GoRouterState state) {
-            return const ProfileScreenPlaceholder();
-          },
-        ),
-        // Settings sub-route
-        GoRoute(
-          path: '/settings',
-          name: 'settings',
-          builder: (BuildContext context, GoRouterState state) {
-            return const SettingsScreenPlaceholder();
-          },
-        ),
-      ],
     ),
-    
-    // Wardrobe Routes (outside main to be accessible independently)
+
+    // Search Route
+    GoRoute(
+      path: '/search',
+      name: 'search',
+      builder: (BuildContext context, GoRouterState state) {
+        final query = state.uri.queryParameters['q'];
+        return SearchScreen(initialQuery: query);
+      },
+    ),
+
+    // Wardrobe Routes
     GoRoute(
       path: '/wardrobe',
-      redirect: (context, state) {
-        // Redirect /wardrobe to main wardrobe tab
-        if (state.fullPath == '/wardrobe') {
-          return '/main';
-        }
-        return null;
+      name: 'wardrobeHome',
+      builder: (BuildContext context, GoRouterState state) {
+        return const WardrobeHomeScreen();
       },
       routes: [
+        GoRoute(
+          path: '/camera',
+          name: 'camera',
+          builder: (BuildContext context, GoRouterState state) {
+            return const CameraScreen();
+          },
+        ),
         GoRoute(
           path: '/add',
           name: 'addClothingItem',
@@ -159,35 +204,269 @@ List<RouteBase> _buildRoutes() {
           name: 'clothingItemDetail',
           builder: (BuildContext context, GoRouterState state) {
             final itemId = state.pathParameters['itemId']!;
-            return ClothingItemDetailScreenPlaceholder(itemId: itemId);
+            return ClothingItemDetailScreen(itemId: itemId);
+          },
+        ),
+        GoRoute(
+          path: '/item/:itemId/edit',
+          name: 'editClothingItem',
+          builder: (BuildContext context, GoRouterState state) {
+            final itemId = state.pathParameters['itemId']!;
+            // TODO: Load actual clothing item from itemId
+            return EditClothingItemScreenPlaceholder(itemId: itemId);
+          },
+        ),
+        GoRoute(
+          path: '/analytics',
+          name: 'wardrobeAnalytics',
+          builder: (BuildContext context, GoRouterState state) {
+            return const WardrobeAnalyticsScreen();
+          },
+        ),
+        GoRoute(
+          path: '/planner',
+          name: 'wardrobePlanner',
+          builder: (BuildContext context, GoRouterState state) {
+            return const WardrobePlannerScreen();
+          },
+        ),
+        GoRoute(
+          path: '/outfit-planner',
+          name: 'wardrobeOutfitPlanner',
+          builder: (BuildContext context, GoRouterState state) {
+            return const SimpleOutfitPlannerScreen();
+          },
+        ),
+        GoRoute(
+          path: '/ai-suggestions',
+          name: 'aiStylingSuggestions',
+          builder: (BuildContext context, GoRouterState state) {
+            return const AiStylingSuggestionsScreen();
           },
         ),
       ],
     ),
-    
+
     // Style Assistant Routes
     GoRoute(
-      path: '/style-challenges',
-      name: 'styleChallenges',
+      path: '/style-assistant',
+      name: 'styleAssistant',
       builder: (BuildContext context, GoRouterState state) {
-        return const StyleChallengesScreen();
+        return const StyleAssistantScreen();
       },
       routes: [
         GoRoute(
-          path: ':id',
-          name: 'challengeDetail',
+          path: '/challenges',
+          name: 'styleChallenges',
           builder: (BuildContext context, GoRouterState state) {
-            final challenge = state.extra as StyleChallenge;
-            return ChallengeDetailScreen(challenge: challenge);
+            return const StyleChallengesScreen();
+          },
+          routes: [
+            GoRoute(
+              path: '/:challengeId',
+              name: 'challengeDetail',
+              builder: (BuildContext context, GoRouterState state) {
+                return const Scaffold(
+                  body: Center(
+                    child: Text('Challenge Detail Screen - Coming Soon'),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+
+    // Social Routes - Temporarily commented out due to compilation errors
+    /*
+    GoRoute(
+      path: '/social',
+      name: 'socialFeed',
+      builder: (BuildContext context, GoRouterState state) {
+        return const SocialFeedScreen();
+      },
+      routes: [
+        GoRoute(
+          path: '/create',
+          name: 'createPost',
+          builder: (BuildContext context, GoRouterState state) {
+            return const CreatePostScreen();
+          },
+        ),
+        GoRoute(
+          path: '/post/:postId',
+          name: 'socialPostDetail',
+          builder: (BuildContext context, GoRouterState state) {
+            final postId = state.pathParameters['postId']!;
+            return SocialPostDetailScreen(postId: postId);
+          },
+        ),
+        GoRoute(
+          path: '/user/:userId',
+          name: 'socialUserProfile',
+          builder: (BuildContext context, GoRouterState state) {
+            final userId = state.pathParameters['userId']!;
+            final username = state.uri.queryParameters['username'];
+            return SocialUserProfileScreen(
+              userId: userId,
+              username: username,
+            );
           },
         ),
       ],
     ),
-    
+    */
+
+    // User Profile Routes
+    GoRoute(
+      path: '/profile',
+      name: 'userProfile',
+      builder: (BuildContext context, GoRouterState state) {
+        return const UserProfileScreen();
+      },
+      routes: [
+        GoRoute(
+          path: '/favorites',
+          name: 'favorites',
+          builder: (BuildContext context, GoRouterState state) {
+            return const FavoritesScreen();
+          },
+        ),
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (BuildContext context, GoRouterState state) {
+            return const SettingsScreen();
+          },
+        ),
+        GoRoute(
+          path: '/privacy-policy',
+          name: 'privacyPolicy',
+          builder: (BuildContext context, GoRouterState state) {
+            return const PrivacyPolicyScreen();
+          },
+        ),
+        GoRoute(
+          path: '/terms-of-service',
+          name: 'termsOfService',
+          builder: (BuildContext context, GoRouterState state) {
+            return const TermsOfServiceScreen();
+          },
+        ),
+      ],
+    ),
+
+    // Swap Market Routes
+    GoRoute(
+      path: '/swap-market',
+      name: 'swapMarket',
+      builder: (BuildContext context, GoRouterState state) {
+        return const SwapMarketScreen();
+      },
+      routes: [
+        GoRoute(
+          path: '/create',
+          name: 'createSwapListing',
+          builder: (BuildContext context, GoRouterState state) {
+            final clothingItemId = state.uri.queryParameters['itemId'] ?? '';
+            return CreateSwapListingScreen(clothingItemId: clothingItemId);
+          },
+        ),
+        GoRoute(
+          path: '/listing/:listingId',
+          name: 'swapListingDetail',
+          builder: (BuildContext context, GoRouterState state) {
+            final listingId = state.pathParameters['listingId']!;
+            return SwapListingDetailScreen(listingId: listingId);
+          },
+        ),
+        GoRoute(
+          path: '/chat/:otherUserId',
+          name: 'preSwapChat',
+          builder: (BuildContext context, GoRouterState state) {
+            final otherUserId = state.pathParameters['otherUserId']!;
+            final swapListingId = state.uri.queryParameters['listingId'];
+            final otherUserName = state.uri.queryParameters['userName'];
+            final otherUserAvatar = state.uri.queryParameters['userAvatar'];
+            return PreSwapChatScreen(
+              otherUserId: otherUserId,
+              swapListingId: swapListingId,
+              otherUserName: otherUserName,
+              otherUserAvatar: otherUserAvatar,
+            );
+          },
+        ),
+      ],
+    ),
+
+    // Messaging Routes
+    GoRoute(
+      path: '/messaging',
+      name: 'messaging',
+      builder: (BuildContext context, GoRouterState state) {
+        return const MessagingScreen();
+      },
+      routes: [
+        GoRoute(
+          path: '/chat/:conversationId',
+          name: 'chat',
+          builder: (BuildContext context, GoRouterState state) {
+            final conversationId = state.pathParameters['conversationId']!;
+            return ChatScreen(conversationId: conversationId);
+          },
+        ),
+      ],
+    ),
+
+    // Notifications Route - V3.0 Release Critical Feature
+    GoRoute(
+      path: '/notifications',
+      name: 'notifications',
+      builder: (BuildContext context, GoRouterState state) {
+        return const NotificationsScreen();
+      },
+    ),
+
+    // Privacy Routes
+    GoRoute(
+      path: '/privacy',
+      name: 'privacyHome',
+      redirect: (context, state) => '/profile/privacy-policy',
+      routes: [
+        GoRoute(
+          path: '/consent',
+          name: 'privacyConsent',
+          builder: (BuildContext context, GoRouterState state) {
+            return const PrivacyConsentScreen();
+          },
+        ),
+        GoRoute(
+          path: '/data-management',
+          name: 'privacyDataManagement',
+          builder: (BuildContext context, GoRouterState state) {
+            return const PrivacyDataManagementScreen();
+          },
+        ),
+      ],
+    ),
+
     // Legacy routes for backward compatibility
     GoRoute(
       path: '/home',
       redirect: (context, state) => '/main',
+    ),
+    
+    // Root route redirect
+    GoRoute(
+      path: '/',
+      redirect: (context, state) => '/main',
+    ),
+
+    // Legacy style challenges route (keep for backward compatibility)
+    GoRoute(
+      path: '/style-challenges',
+      redirect: (context, state) => '/style-assistant/challenges',
     ),
   ];
 }
@@ -301,7 +580,33 @@ class ClothingItemDetailScreenPlaceholder extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Clothing Item Detail Screen - Coming Soon'),
+            const Text('Clothing Item Detail Screen - Coming Soon'),
+            const SizedBox(height: 16),
+            Text('Item ID: $itemId'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditClothingItemScreenPlaceholder extends StatelessWidget {
+  final String itemId;
+  
+  const EditClothingItemScreenPlaceholder({
+    super.key,
+    required this.itemId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Edit Item')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Edit Clothing Item Screen - Coming Soon'),
             const SizedBox(height: 16),
             Text('Item ID: $itemId'),
           ],

@@ -1,43 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'features/home/presentation/screens/main_screen.dart';
 import 'core/theme/app_theme.dart';
-import 'core/router/app_router.dart';
-import 'core/constants/app_constants.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Supabase client
-  await Supabase.initialize(
-    url: AppConstants.supabaseUrl,
-    anonKey: AppConstants.supabaseAnonKey,
-  );
-  
-  runApp(
-    const ProviderScope(
-      child: AuraApp(),
-    ),
-  );
+void main() {
+  runApp(const ProviderScope(child: AuraApp()));
 }
 
-/// Main Aura application entry point
-/// Uses Riverpod for state management and provider-based routing
-class AuraApp extends ConsumerWidget {
+class AuraApp extends StatelessWidget {
   const AuraApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
-    
-    return MaterialApp.router(
-      routerConfig: router,
+  Widget build(BuildContext context) {
+    return MaterialApp(
       title: 'Aura',
-      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
+      home: const MainScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

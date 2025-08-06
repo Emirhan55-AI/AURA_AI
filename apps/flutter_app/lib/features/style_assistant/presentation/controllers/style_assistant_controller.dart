@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/providers/image_picker_provider.dart';
+import '../../../../core/providers/service_providers.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/usecases/upload_image_usecase.dart';
 import '../../providers.dart';
@@ -113,8 +114,8 @@ class StyleAssistantController extends _$StyleAssistantController {
         messages: [...updatedState.messages, aiThinkingMessage],
       ));
 
-      // Get AI response stream from use case
-      await _handleAiResponseStream(userMessage, aiThinkingMessage.id);
+      // Get AI response using real service
+      await _handleAiTextResponse(userMessage, aiThinkingMessage.id);
 
     } catch (error) {
       final currentState = state.valueOrNull ?? const StyleAssistantState();
@@ -181,8 +182,8 @@ class StyleAssistantController extends _$StyleAssistantController {
             messages: [...updatedState.messages, aiThinkingMessage],
           ));
 
-          // Use the same AI response stream for image analysis
-          await _handleAiResponseStream(userMessage, aiThinkingMessage.id);
+          // Use the real AI service for image analysis and recommendations
+          await _handleAiImageResponse(userMessage, aiThinkingMessage.id);
         },
       );
     } catch (error) {
@@ -249,69 +250,124 @@ class StyleAssistantController extends _$StyleAssistantController {
 
   // PRIVATE HELPER METHODS
 
-  /// Handle AI response stream from the backend
-  /// 
-  /// This method manages the real-time streaming of AI responses
-  /// Updates the UI as chunks arrive and finalizes when complete
-  Future<void> _handleAiResponseStream(UserMessage userMessage, String thinkingMessageId) async {
+  /// Handle AI text response using real service
+  Future<void> _handleAiTextResponse(UserMessage userMessage, String thinkingMessageId) async {
     try {
-      // Get the AI response stream use case
-      final getAiResponseStreamUseCase = ref.read(getAiResponseStreamUseCaseProvider);
+      final aiService = ref.read(auraAiServiceProvider);
       
-      // Listen to the AI response stream
-      final aiResponseStream = getAiResponseStreamUseCase(userMessage);
-      
-      AiMessage? lastMessage;
-      
-      await for (final aiMessageChunk in aiResponseStream) {
-        final currentState = state.value!;
-        
-        // Remove the thinking message if this is the first real chunk
-        List<ChatMessage> updatedMessages = currentState.messages;
-        if (lastMessage == null) {
-          updatedMessages = currentState.messages
-              .where((msg) => msg.id != thinkingMessageId)
-              .toList();
-        } else {
-          // Replace the previous AI message with the updated chunk
-          updatedMessages = currentState.messages
-              .where((msg) => msg.id != lastMessage!.id)
-              .toList();
-        }
-        
-        // Add the new AI message chunk
-        updatedMessages.add(aiMessageChunk);
-        lastMessage = aiMessageChunk;
-        
-        // Update the state with the new message
-        state = AsyncData(currentState.copyWith(
-          messages: updatedMessages,
-          isLoading: aiMessageChunk.isGenerating, // Stop loading when AI finishes
-        ));
-      }
-      
-    } catch (error) {
-      // Handle stream errors
-      final currentState = state.value!;
-      
-      // Remove thinking message and show error
-      final messagesWithoutThinking = currentState.messages
-          .where((msg) => msg.id != thinkingMessageId)
-          .toList();
-      
-      // Add error message as AI response
-      final errorMessage = AiMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        timestamp: DateTime.now(),
-        text: "I'm having trouble connecting right now. Please try again in a moment.",
-        isGenerating: false,
+      // Get style recommendation based on user query
+      final result = await aiService.getRecommendation(
+        userId: 'current_user', // TODO: Get actual user ID from auth service
+        query: userMessage.text,
+        context: <String, dynamic>{
+          'message_history': state.value?.messages
+              .whereType<UserMessage>()
+              .map((m) => m.text)
+              .join(', ') ?? '',
+        },
       );
       
-      state = AsyncData(currentState.copyWith(
-        messages: [...messagesWithoutThinking, errorMessage],
-        isLoading: false,
-        error: 'Failed to get AI response: ${error.toString()}',
-      ));
+      result.fold(
+        (failure) {
+          _handleAiError(thinkingMessageId, 'Sorry, I couldn\'t process your request right now. Please try again.');
+        },
+        (recommendationResult) {
+          final currentState = state.value!;
+          
+          // Remove thinking message
+          final messagesWithoutThinking = currentState.messages
+              .where((msg) => msg.id != thinkingMessageId)
+              .toList();
+          
+          // Create AI response message
+          final aiResponse = AiMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            timestamp: DateTime.now(),
+            text: recommendationResult.recommendation,
+            isGenerating: false,
+          );
+          
+          state = AsyncData(currentState.copyWith(
+            messages: [...messagesWithoutThinking, aiResponse],
+            isLoading: false,
+          ));
+        },
+      );
+    } catch (error) {
+      _handleAiError(thinkingMessageId, 'I encountered an issue while processing your message. Please try again.');
     }
+  }
+
+  /// Handle AI image response using real service
+  Future<void> _handleAiImageResponse(UserMessage userMessage, String thinkingMessageId) async {
+    try {
+      final aiService = ref.read(auraAiServiceProvider);
+      
+      if (userMessage.imageUrl != null) {
+        // Use the recommendation API with image context
+        final result = await aiService.getRecommendation(
+          userId: 'current_user', // TODO: Get actual user ID from auth service
+          query: "Analyze this clothing image and provide style advice",
+          context: <String, dynamic>{
+            'image_url': userMessage.imageUrl!,
+            'analysis_type': 'image_style_advice',
+          },
+        );
+        
+        result.fold(
+          (failure) {
+            _handleAiError(thinkingMessageId, 'Sorry, I couldn\'t analyze your image right now. Please try again.');
+          },
+          (recommendationResult) {
+            final currentState = state.value!;
+            
+            // Remove thinking message
+            final messagesWithoutThinking = currentState.messages
+                .where((msg) => msg.id != thinkingMessageId)
+                .toList();
+            
+            // Create AI response message with image analysis
+            final aiResponse = AiMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              timestamp: DateTime.now(),
+              text: recommendationResult.recommendation,
+              isGenerating: false,
+            );
+            
+            state = AsyncData(currentState.copyWith(
+              messages: [...messagesWithoutThinking, aiResponse],
+              isLoading: false,
+            ));
+          },
+        );
+      } else {
+        _handleAiError(thinkingMessageId, 'No image was provided for analysis.');
+      }
+    } catch (error) {
+      _handleAiError(thinkingMessageId, 'I encountered an issue while analyzing your image. Please try again.');
+    }
+  }
+
+  /// Handle AI errors consistently
+  void _handleAiError(String thinkingMessageId, String errorMessage) {
+    final currentState = state.value!;
+    
+    // Remove thinking message
+    final messagesWithoutThinking = currentState.messages
+        .where((msg) => msg.id != thinkingMessageId)
+        .toList();
+    
+    // Add error message as AI response
+    final errorResponse = AiMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      text: errorMessage,
+      isGenerating: false,
+    );
+    
+    state = AsyncData(currentState.copyWith(
+      messages: [...messagesWithoutThinking, errorResponse],
+      isLoading: false,
+    ));
   }
 }

@@ -1,0 +1,222 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/models/style_challenge_new.dart';
+import '../../domain/repositories/style_challenge_repository.dart';
+
+/// Provider for the StyleChallengeRepository
+final styleChallengeRepositoryProvider = Provider<StyleChallengeRepository>((ref) {
+  return MockStyleChallengeRepository();
+});
+
+/// Provider for active challenges
+final activeChallengesProvider = FutureProvider<List<StyleChallenge>>((ref) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.getActiveChallenges();
+});
+
+/// Provider for upcoming challenges
+final upcomingChallengesProvider = FutureProvider<List<StyleChallenge>>((ref) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.getUpcomingChallenges();
+});
+
+/// Provider for past challenges
+final pastChallengesProvider = FutureProvider<List<StyleChallenge>>((ref) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.getPastChallenges();
+});
+
+/// Provider for trending challenges
+final trendingChallengesProvider = FutureProvider<List<StyleChallenge>>((ref) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.getTrendingChallenges();
+});
+
+/// Provider for a specific challenge by ID
+final challengeByIdProvider = FutureProvider.family<StyleChallenge?, String>((ref, challengeId) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.getChallengeById(challengeId);
+});
+
+/// Provider for challenge search results
+final challengeSearchProvider = FutureProvider.family<List<StyleChallenge>, String>((ref, query) async {
+  if (query.isEmpty) return [];
+  
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.searchChallenges(query);
+});
+
+/// Provider for user participation status in a challenge
+final isUserParticipatingProvider = FutureProvider.family<bool, String>((ref, challengeId) async {
+  final repository = ref.watch(styleChallengeRepositoryProvider);
+  return repository.isUserParticipating(challengeId);
+});
+
+/// State notifier for managing challenge interactions
+class StyleChallengeActionsNotifier extends StateNotifier<AsyncValue<void>> {
+  StyleChallengeActionsNotifier(this.ref) : super(const AsyncValue.data(null));
+
+  final Ref ref;
+
+  /// Join a challenge
+  Future<void> joinChallenge(String challengeId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final repository = ref.read(styleChallengeRepositoryProvider);
+      await repository.joinChallenge(challengeId);
+      
+      // Invalidate related providers to refresh data
+      ref.invalidate(activeChallengesProvider);
+      ref.invalidate(upcomingChallengesProvider);
+      ref.invalidate(challengeByIdProvider(challengeId));
+      ref.invalidate(isUserParticipatingProvider(challengeId));
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Leave a challenge
+  Future<void> leaveChallenge(String challengeId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final repository = ref.read(styleChallengeRepositoryProvider);
+      await repository.leaveChallenge(challengeId);
+      
+      // Invalidate related providers to refresh data
+      ref.invalidate(activeChallengesProvider);
+      ref.invalidate(upcomingChallengesProvider);
+      ref.invalidate(challengeByIdProvider(challengeId));
+      ref.invalidate(isUserParticipatingProvider(challengeId));
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Submit an outfit to a challenge
+  Future<void> submitOutfit(String challengeId, String outfitId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final repository = ref.read(styleChallengeRepositoryProvider);
+      await repository.submitOutfit(challengeId, outfitId);
+      
+      // Invalidate related providers to refresh data
+      ref.invalidate(activeChallengesProvider);
+      ref.invalidate(challengeByIdProvider(challengeId));
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Vote on a challenge submission
+  Future<void> voteOnSubmission(String challengeId, String submissionId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final repository = ref.read(styleChallengeRepositoryProvider);
+      await repository.voteOnSubmission(challengeId, submissionId);
+      
+      // Invalidate related providers to refresh data
+      ref.invalidate(challengeByIdProvider(challengeId));
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Refresh all challenge data
+  Future<void> refreshAll() async {
+    ref.invalidate(activeChallengesProvider);
+    ref.invalidate(upcomingChallengesProvider);
+    ref.invalidate(pastChallengesProvider);
+    ref.invalidate(trendingChallengesProvider);
+  }
+
+  /// Clear any error states
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
+    }
+  }
+}
+
+/// Provider for challenge actions
+final styleChallengeActionsProvider = StateNotifierProvider<StyleChallengeActionsNotifier, AsyncValue<void>>((ref) {
+  return StyleChallengeActionsNotifier(ref);
+});
+
+/// Provider for current tab state
+final currentChallengeTabProvider = StateProvider<ChallengeStatus>((ref) {
+  return ChallengeStatus.active;
+});
+
+/// State class for challenge filters
+class ChallengeFilterState {
+  final ChallengeDifficulty? difficulty;
+  final String searchQuery;
+  final List<String> selectedTags;
+
+  const ChallengeFilterState({
+    this.difficulty,
+    this.searchQuery = '',
+    this.selectedTags = const [],
+  });
+
+  ChallengeFilterState copyWith({
+    ChallengeDifficulty? difficulty,
+    String? searchQuery,
+    List<String>? selectedTags,
+  }) {
+    return ChallengeFilterState(
+      difficulty: difficulty ?? this.difficulty,
+      searchQuery: searchQuery ?? this.searchQuery,
+      selectedTags: selectedTags ?? this.selectedTags,
+    );
+  }
+
+  bool get hasActiveFilters {
+    return difficulty != null || 
+           searchQuery.isNotEmpty || 
+           selectedTags.isNotEmpty;
+  }
+}
+
+/// State notifier for challenge filters
+class ChallengeFiltersNotifier extends StateNotifier<ChallengeFilterState> {
+  ChallengeFiltersNotifier() : super(const ChallengeFilterState());
+
+  void setDifficulty(ChallengeDifficulty? difficulty) {
+    state = state.copyWith(difficulty: difficulty);
+  }
+
+  void setSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+  }
+
+  void addTag(String tag) {
+    final newTags = List<String>.from(state.selectedTags)..add(tag);
+    state = state.copyWith(selectedTags: newTags);
+  }
+
+  void removeTag(String tag) {
+    final newTags = List<String>.from(state.selectedTags)..remove(tag);
+    state = state.copyWith(selectedTags: newTags);
+  }
+
+  void clearFilters() {
+    state = const ChallengeFilterState();
+  }
+}
+
+/// Provider for challenge filters
+final challengeFiltersProvider = StateNotifierProvider<ChallengeFiltersNotifier, ChallengeFilterState>((ref) {
+  return ChallengeFiltersNotifier();
+});

@@ -1,313 +1,441 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/ui/system_state_widget.dart';
-import '../../../outfits/domain/entities/outfit.dart';
-import '../widgets/planner/planner_calendar_view.dart';
-import '../widgets/planner/draggable_combination_card.dart';
-import '../widgets/planner/combination_drag_target.dart';
 import '../controllers/wardrobe_planner_controller.dart';
+import '../widgets/wardrobe_planner/planner_header.dart';
+import '../widgets/wardrobe_planner/outfit_card_dragger.dart';
+import '../widgets/wardrobe_planner/planner_calendar.dart';
+import '../widgets/wardrobe_planner/weather_widget.dart';
+import '../widgets/wardrobe_planner/planner_stats_card.dart';
+import '../../../../core/utils/extensions/context_extensions.dart';
+import '../../domain/models/planned_outfit.dart';
+import '../../../outfits/domain/entities/outfit.dart';
 
-/// Screen for planning outfits on a calendar view with weather integration
-/// Allows users to drag and drop outfits onto calendar dates and get weather-based suggestions
-class WardrobePlannerScreen extends ConsumerWidget {
+class WardrobePlannerScreen extends ConsumerStatefulWidget {
   const WardrobePlannerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(wardrobePlannerControllerProvider);
-    final notifier = ref.read(wardrobePlannerControllerProvider.notifier);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  ConsumerState<WardrobePlannerScreen> createState() => _WardrobePlannerScreenState();
+}
 
-    // Listen for operations that might require user feedback (e.g., dialogs)
-    _listenForPendingDrops(context, ref);
+class _WardrobePlannerScreenState extends ConsumerState<WardrobePlannerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the controller
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(wardrobePlannerControllerProvider.notifier).loadInitialData();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(wardrobePlannerControllerProvider);
+    final controller = ref.read(wardrobePlannerControllerProvider.notifier);
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: Text(
-          'Planner',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: colorScheme.surfaceTint,
+        title: const Text('Outfit Planner'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        scrolledUnderElevation: 1,
         actions: [
           IconButton(
-            onPressed: () => notifier.loadPlannedOutfits(),
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            icon: Icon(
+              state.isWeekView ? Icons.calendar_month : Icons.view_week,
+            ),
+            onPressed: () => controller.toggleViewMode(),
+            tooltip: state.isWeekView ? 'Month View' : 'Week View',
           ),
-        ],
-      ),
-      body: _buildBody(context, controller, notifier),
-    );
-  }
-
-  Widget _buildBody(BuildContext context, WardrobePlannerState state, WardrobePlannerController notifier) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Handle loading state
-    if (state.plannedOutfits.isLoading) {
-      return const SystemStateWidget(
-        icon: Icons.calendar_today,
-        message: 'Loading your planner...',
-      );
-    }
-
-    // Handle error state
-    if (state.plannedOutfits.hasError) {
-      return SystemStateWidget(
-        icon: Icons.error_outline,
-        title: 'Unable to Load Planner',
-        message: 'We couldn\'t load your outfit plans. Please check your connection and try again.',
-        onRetry: () => notifier.retryLoadPlannedOutfits(),
-        retryText: 'Try Again',
-        iconColor: colorScheme.error,
-      );
-    }
-
-    // Weather loading error is handled separately and doesn't block the main UI
-    if (state.weatherData.hasError) {
-      return Column(
-        children: [
-          _buildWeatherErrorBanner(context, notifier),
-          Expanded(child: _buildMainContent(context, state, notifier)),
-        ],
-      );
-    }
-
-    return _buildMainContent(context, state, notifier);
-  }
-
-  Widget _buildMainContent(BuildContext context, WardrobePlannerState state, WardrobePlannerController notifier) {
-    return Column(
-      children: [
-        _buildDraggableOutfitsSection(context, state, notifier),
-        Expanded(child: _buildCalendarView(context, state, notifier)),
-      ],
-    );
-  }
-
-  Widget _buildDraggableOutfitsSection(BuildContext context, WardrobePlannerState state, WardrobePlannerController notifier) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      height: 180,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            onPressed: () => _showStatsDialog(),
+            tooltip: 'View Statistics',
           ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.drag_indicator,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
+          PopupMenuButton<String>(
+            onSelected: (value) => _handleMenuAction(value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'refresh',
+                child: ListTile(
+                  leading: Icon(Icons.refresh),
+                  title: Text('Refresh'),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Drag outfits to plan',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text('Settings'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await controller.refreshData();
+        },
+        child: CustomScrollView(
+          slivers: [
+            // Header with date navigation
+            SliverToBoxAdapter(
+              child: PlannerHeader(
+                selectedDate: state.selectedDate ?? DateTime.now(),
+                onDateChanged: controller.setSelectedDate,
+                onTodayPressed: () => controller.setSelectedDate(DateTime.now()),
+              ),
+            ),
+
+            // Weather information
+            state.weatherData.when(
+              data: (weatherMap) {
+                final selectedDate = state.selectedDate ?? DateTime.now();
+                final weather = weatherMap[DateTime(
+                  selectedDate.year,
+                  selectedDate.month,
+                  selectedDate.day,
+                )];
+                
+                if (weather != null) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: WeatherWidget(weather: weather),
+                    ),
+                  );
+                }
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (error, stack) => const SliverToBoxAdapter(
+                child: SizedBox.shrink(),
+              ),
+            ),
+
+            // Available outfits for dragging
+            SliverToBoxAdapter(
+              child: Container(
+                height: 120,
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        'Available Outfits',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        itemCount: state.availableOutfits.length,
+                        itemBuilder: (context, index) {
+                          final outfit = state.availableOutfits[index];
+                          return OutfitCardDragger(
+                            outfit: outfit,
+                            onDragStarted: () => controller.setDraggingOutfit(outfit),
+                            onDragCompleted: () => controller.setDraggingOutfit(null),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Main calendar view
+            state.plannedOutfits.when(
+              data: (plannedOutfits) => SliverToBoxAdapter(
+                child: PlannerCalendar(
+                  plannedOutfits: plannedOutfits,
+                  selectedDate: state.selectedDate ?? DateTime.now(),
+                  isWeekView: state.isWeekView,
+                  draggingOutfit: state.draggingOutfit,
+                  onDateSelected: controller.setSelectedDate,
+                  onOutfitDropped: (Outfit outfit, DateTime date) =>
+                      controller.planOutfitForDate(outfit, date),
+                  onOutfitTapped: (PlannedOutfit plannedOutfit) => 
+                      _showOutfitDetails(plannedOutfit),
+                  onOutfitCompleted: (PlannedOutfit plannedOutfit) =>
+                      controller.markOutfitCompleted(plannedOutfit.id),
+                  onOutfitDeleted: (PlannedOutfit plannedOutfit) =>
+                      controller.deletePlannedOutfit(plannedOutfit.id),
+                ),
+              ),
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading planned outfits...'),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: state.availableOutfits.isNotEmpty
-                ? ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: state.availableOutfits.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final outfit = state.availableOutfits[index];
-                      return DraggableCombinationCard(
-                        outfit: outfit,
-                        onDragStarted: () => notifier.startDraggingOutfit(outfit),
-                      );
-                    },
-                  )
-                : Center(
-                    child: Text(
-                      'No outfits available',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+              ),
+              error: (error, stack) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load planned outfits',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () => controller.refreshData(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalendarView(BuildContext context, WardrobePlannerState state, WardrobePlannerController notifier) {
-    final plannedOutfitsByDate = <DateTime, List<PlannedOutfit>>{};
-    final plannedOutfits = state.plannedOutfits.valueOrNull ?? [];
-    
-    for (final plannedOutfit in plannedOutfits) {
-      final normalizedDate = DateTime(
-        plannedOutfit.date.year,
-        plannedOutfit.date.month,
-        plannedOutfit.date.day,
-      );
-      
-      if (plannedOutfitsByDate.containsKey(normalizedDate)) {
-        plannedOutfitsByDate[normalizedDate]!.add(plannedOutfit);
-      } else {
-        plannedOutfitsByDate[normalizedDate] = [plannedOutfit];
-      }
-    }
-
-    return PlannerCalendarView(
-      plannedOutfits: plannedOutfitsByDate,
-      weatherData: state.weatherData.valueOrNull ?? {},
-      selectedDate: state.selectedDate,
-      onAcceptOutfit: (outfit, date) => _handleAcceptOutfit(context, notifier, outfit, date),
-      onRemoveOutfit: (plannedOutfit) => _handleRemoveOutfit(context, notifier, plannedOutfit),
-      onDateSelected: (date) => notifier.selectDate(date),
-    );
-  }
-
-  Widget _buildWeatherErrorBanner(BuildContext context, WardrobePlannerController notifier) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      color: colorScheme.errorContainer,
-      child: Row(
-        children: [
-          Icon(Icons.warning, color: colorScheme.onErrorContainer, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Weather data unavailable',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onErrorContainer,
+                ),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () => notifier.retryLoadWeatherData(),
-            child: Text(
-              'Retry',
-              style: TextStyle(color: colorScheme.onErrorContainer),
+
+            // Bottom padding for better scrolling experience
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 100),
             ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateOutfitDialog(),
+        tooltip: 'Plan New Outfit',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _handleMenuAction(String action) {
+    final controller = ref.read(wardrobePlannerControllerProvider.notifier);
+    
+    switch (action) {
+      case 'refresh':
+        controller.refreshData();
+        break;
+      case 'settings':
+        _showSettingsDialog();
+        break;
+    }
+  }
+
+  void _showStatsDialog() {
+    final stats = ref.read(wardrobePlannerControllerProvider).stats;
+    
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Planning Statistics'),
+        content: stats != null 
+            ? PlannerStatsCard(stats: stats)
+            : const CircularProgressIndicator(),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
           ),
         ],
       ),
     );
   }
 
-  void _listenForPendingDrops(BuildContext context, WidgetRef ref) {
-    ref.listen<PlannedOutfit?>(
-      wardrobePlannerControllerProvider.select((state) => state.pendingDropPlan),
-      (previous, next) {
-        if (next != null) {
-          _showWeatherWarningDialog(context, ref.read(wardrobePlannerControllerProvider.notifier), next);
-        }
-      },
-    );
-  }
-
-  void _showWeatherWarningDialog(BuildContext context, WardrobePlannerController notifier, PlannedOutfit plan) {
+  void _showSettingsDialog() {
     showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Weather Warning'),
-          content: const Text('The weather for this day might not be suitable for the selected outfit. Are you sure you want to plan it?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                notifier.cancelPendingDrop();
-                Navigator.of(dialogContext).pop();
-              },
+      builder: (context) => AlertDialog(
+        title: const Text('Planner Settings'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.notifications),
+              title: Text('Planning Reminders'),
+              trailing: Switch(value: true, onChanged: null),
             ),
-            TextButton(
-              child: const Text('Plan Anyway'),
-              onPressed: () {
-                notifier.confirmDropPlan(plan);
-                Navigator.of(dialogContext).pop();
-              },
+            ListTile(
+              leading: Icon(Icons.cloud),
+              title: Text('Weather Warnings'),
+              trailing: Switch(value: true, onChanged: null),
+            ),
+            ListTile(
+              leading: Icon(Icons.auto_awesome),
+              title: Text('Smart Suggestions'),
+              trailing: Switch(value: true, onChanged: null),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  void _handleAcceptOutfit(BuildContext context, WardrobePlannerController notifier, Outfit outfit, DateTime date) {
-    notifier.dropOutfit(date, outfit);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${outfit.name} planned for ${_formatDate(date)}'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
 
-  void _handleRemoveOutfit(BuildContext context, WardrobePlannerController notifier, PlannedOutfit plannedOutfit) {
-    notifier.removePlannedOutfit(plannedOutfit.id);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${plannedOutfit.outfit.name} removed from plan'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+  void _showCreateOutfitDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Outfit'),
+        content: const Text(
+          'This feature will allow you to create a new outfit directly from the planner. '
+          'For now, please use the wardrobe screen to create outfits.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to wardrobe screen
+              context.pushNamed('/wardrobe');
+            },
+            child: const Text('Go to Wardrobe'),
+          ),
+        ],
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}';
-  }
-}
-
-/// Route generator for WardrobePlannerScreen
-class WardrobePlannerRoute {
-  static const String name = '/wardrobe-planner';
-
-  static Route<void> route() {
-    return MaterialPageRoute<void>(
-      settings: const RouteSettings(name: name),
-      builder: (context) => const WardrobePlannerScreen(),
+  void _showOutfitDetails(PlannedOutfit plannedOutfit) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(plannedOutfit.outfitName),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (plannedOutfit.outfitImageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  plannedOutfit.outfitImageUrl!,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 150,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: const Icon(Icons.image_not_supported),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            Text(
+              'Date: ${plannedOutfit.date.day}/${plannedOutfit.date.month}/${plannedOutfit.date.year}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (plannedOutfit.notes != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Notes: ${plannedOutfit.notes}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+            if (plannedOutfit.tags.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 4,
+                children: plannedOutfit.tags.map<Widget>((String tag) => 
+                  Chip(
+                    label: Text(tag),
+                    labelStyle: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ).toList(),
+              ),
+            ],
+            if (plannedOutfit.isWeatherWarning) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        plannedOutfit.weatherRecommendation ?? 
+                        'Weather may not be suitable for this outfit',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          if (!plannedOutfit.isCompleted)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(wardrobePlannerControllerProvider.notifier)
+                    .markOutfitCompleted(plannedOutfit.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Outfit marked as completed!'),
+                  ),
+                );
+              },
+              child: const Text('Mark Completed'),
+            ),
+        ],
+      ),
     );
-  }
-}
-
-/// Extension for easy navigation
-extension WardrobePlannerNavigation on NavigatorState {
-  Future<void> pushWardrobePlanner() {
-    return push(WardrobePlannerRoute.route());
   }
 }

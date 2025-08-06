@@ -1,278 +1,869 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../core/ui/system_state_widget.dart';
-import '../../widgets/onboarding/style_discovery/onboarding_chat_interface.dart';
-import '../../widgets/onboarding/style_discovery/answer_option_widget.dart';
 
-/// StyleDiscoveryScreen - The onboarding screen for discovering user style preferences
+import '../../controllers/style_discovery_controller.dart';
+import 'package:flutter_app/features/authentication/presentation/widgets/onboarding/style_discovery/question_cards/tinder_card.dart';
+
+/// Enhanced StyleDiscoveryScreen - Gamified onboarding experience
 /// 
-/// This screen presents a gamified, chat-like questionnaire to collect the user's
-/// style preferences during the onboarding process. The information collected is used
-/// to initialize the user's AI stylist profile.
-class StyleDiscoveryScreen extends StatefulWidget {
+/// Features:
+/// - 15 curated style questions
+/// - Progress tracking
+/// - Real-time style profile generation
+/// - Beautiful animations and transitions  
+class StyleDiscoveryScreen extends ConsumerStatefulWidget {
   const StyleDiscoveryScreen({super.key});
 
   @override
-  State<StyleDiscoveryScreen> createState() => _StyleDiscoveryScreenState();
+  ConsumerState<StyleDiscoveryScreen> createState() => _StyleDiscoveryScreenState();
 }
 
-class _StyleDiscoveryScreenState extends State<StyleDiscoveryScreen> {
-  // Current state of the questionnaire
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
-  bool _isAiTyping = false;
+class _StyleDiscoveryScreenState extends ConsumerState<StyleDiscoveryScreen> 
+    with TickerProviderStateMixin {
   
-  // Index of the current question being displayed
-  int _currentQuestionIndex = 0;
-  
-  // List of user's answers
-  final List<UserStyleAnswer> _userAnswers = [];
-  
-  // Mock data for style preferences questions
-  late List<StylePreference> _stylePreferences;
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+
+  Map<String, dynamic>? _generatedProfile;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadStylePreferences();
+    
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.easeInOut,
+    ));
   }
 
-  // Simulate loading the style preferences from a service
-  Future<void> _loadStylePreferences() async {
-    setState(() {
-      _isLoading = true;
+  @override
+  void dispose() {
+    _progressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(styleDiscoveryControllerProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Update progress animation when progress changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _progressController.animateTo(state.progress);
     });
 
-    try {
-      // Simulate a network delay
-      await Future<void>.delayed(const Duration(seconds: 1));
-      
-      // Mock data
-      _stylePreferences = [
-        const StylePreference(
-          questionId: 'colors',
-          questionText: 'What colors do you most often wear or prefer in your outfits?',
-          answerType: AnswerType.multiChoice,
-          options: ['Black', 'White', 'Blue', 'Red', 'Green', 'Yellow', 'Purple', 'Orange', 'Pink', 'Grey', 'Brown'],
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with progress
+            _buildHeader(theme, colorScheme, state),
+            
+            // Main content
+            Expanded(
+              child: _buildContent(state, theme, colorScheme),
+            ),
+            
+            // Navigation buttons
+            if (!state.isCompleted) _buildNavigationButtons(state, theme, colorScheme),
+          ],
         ),
-        const StylePreference(
-          questionId: 'patterns',
-          questionText: 'Do you prefer any specific patterns or prints in your clothing?',
-          answerType: AnswerType.multiChoice,
-          options: ['Solid colors', 'Stripes', 'Floral', 'Polka dots', 'Plaid', 'Animal print', 'Geometric', 'Abstract'],
-        ),
-        const StylePreference(
-          questionId: 'style',
-          questionText: 'How would you describe your personal style?',
-          answerType: AnswerType.singleChoice,
-          options: ['Casual', 'Formal', 'Sporty', 'Bohemian', 'Minimalist', 'Vintage', 'Edgy', 'Classic'],
-        ),
-        const StylePreference(
-          questionId: 'favorite_item',
-          questionText: 'What\'s your favorite clothing item that you own?',
-          answerType: AnswerType.textInput,
-          options: [],
-        ),
-        const StylePreference(
-          questionId: 'favorite_color',
-          questionText: 'What\'s your absolute favorite color to wear?',
-          answerType: AnswerType.colorPicker,
-          options: [],
-        ),
-        const StylePreference(
-          questionId: 'inspiration_image',
-          questionText: 'If you have a style inspiration image, please share it with me! (optional)',
-          answerType: AnswerType.imageUpload,
-          options: [],
-          isRequired: false,
-        ),
-      ];
-      
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage = 'Failed to load style questionnaire. Please try again.';
-      });
+      ),
+    );
+  }
+
+  /// Builds the header section with progress indicator
+  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme, StyleDiscoveryState state) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Top bar with back button and progress
+          Row(
+            children: [
+              IconButton(
+                onPressed: state.canGoPrevious 
+                    ? () => ref.read(styleDiscoveryControllerProvider.notifier).previousQuestion()
+                    : () => context.pop(),
+                icon: Icon(
+                  Icons.arrow_back_ios_new,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Style Discovery',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Question ${state.currentQuestionIndex + 1} of ${state.questions.length}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Progress indicator
+          AnimatedBuilder(
+            animation: _progressAnimation,
+            builder: (context, child) {
+              return Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: _progressAnimation.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.tertiary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the main content area
+  Widget _buildContent(StyleDiscoveryState state, ThemeData theme, ColorScheme colorScheme) {
+    if (state.isLoading) {
+      return _buildLoadingState(theme, colorScheme);
+    }
+    
+    if (state.isCompleted) {
+      return _buildCompletionState(state, theme, colorScheme);
+    }
+    
+    if (state.errorMessage != null) {
+      return _buildErrorState(state.errorMessage!, theme, colorScheme);
+    }
+    
+    final currentQuestion = state.currentQuestion;
+    if (currentQuestion == null) {
+      return _buildErrorState('No questions available', theme, colorScheme);
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.3, 0.0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey(currentQuestion.id),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _buildQuestionCard(currentQuestion, state, theme, colorScheme),
+      ),
+    );
+  }
+
+  /// Builds question card based on type
+  Widget _buildQuestionCard(
+    StyleQuestion question, 
+    StyleDiscoveryState state, 
+    ThemeData theme, 
+    ColorScheme colorScheme
+  ) {
+    switch (question.type) {
+      case QuestionType.tinder:
+        return TinderCard(
+          question: question,
+          currentAnswer: state.answers[question.id],
+          onAnswer: (List<String> selectedOptions) {
+            ref.read(styleDiscoveryControllerProvider.notifier).answerQuestion(
+              question.id,
+              AnswerType.list,
+              selectedOptions,
+            );
+          },
+        );
+      // Add other question types here
+      default:
+        return Center(
+          child: Text(
+            'Unsupported question type',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
     }
   }
 
-  // Handle when the user submits an answer
-  void _handleAnswerSubmitted(List<String> answers) {
-    if (_currentQuestionIndex < _stylePreferences.length) {
-      final questionId = _stylePreferences[_currentQuestionIndex].questionId;
-      
-      setState(() {
-        // Add the user's answer
-        _userAnswers.add(UserStyleAnswer(
-          questionId: questionId,
-          answers: answers,
-        ));
+  /// Builds a generic question card for all question types
+  Widget _buildGenericQuestionCard(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Question title
+        Text(
+          question.title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
         
-        // Simulate AI typing
-        _isAiTyping = true;
-      });
+        if (question.description != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            question.description!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.7),
+              height: 1.4,
+            ),
+          ),
+        ],
+        
+        const SizedBox(height: 32),
+        
+        // Options based on question type
+        Expanded(
+          child: _buildOptionsForType(question, currentAnswer, theme, colorScheme),
+        ),
+      ],
+    );
+  }
 
-      // Simulate AI processing time
-      Future.delayed(const Duration(milliseconds: 1200), () {
+  Widget _buildOptionsForType(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    switch (question.type) {
+      case QuestionType.singleChoice:
+        return _buildSingleChoiceOptions(question, currentAnswer, theme, colorScheme);
+      case QuestionType.multipleChoice:
+        return _buildMultipleChoiceOptions(question, currentAnswer, theme, colorScheme);
+      case QuestionType.slider:
+        return _buildSliderOption(question, currentAnswer, theme, colorScheme);
+      case QuestionType.tinder:
+        return _buildTinderOptions(question, currentAnswer, theme, colorScheme);
+      case QuestionType.colorPicker:
+        return _buildColorPickerOptions(question, currentAnswer, theme, colorScheme);
+      case QuestionType.imageUpload:
+        return _buildImageUploadOption(question, currentAnswer, theme, colorScheme);
+    }
+  }
+
+  Widget _buildSingleChoiceOptions(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return ListView.builder(
+      itemCount: question.options?.length ?? 0,
+      itemBuilder: (context, index) {
+        final option = question.options![index];
+        final isSelected = currentAnswer?.value == option;
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _handleAnswer(question.id, AnswerType.text, option),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? colorScheme.primaryContainer.withOpacity(0.7)
+                      : colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected 
+                        ? colorScheme.primary
+                        : colorScheme.outline.withOpacity(0.3),
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Text(
+                  option,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: isSelected 
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSurface,
+                    fontWeight: isSelected 
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMultipleChoiceOptions(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final selectedOptions = (currentAnswer?.value as List<String>?)?.toSet() ?? <String>{};
+    
+    return ListView.builder(
+      itemCount: question.options?.length ?? 0,
+      itemBuilder: (context, index) {
+        final option = question.options![index];
+        final isSelected = selectedOptions.contains(option);
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                final newSelection = Set<String>.from(selectedOptions);
+                if (isSelected) {
+                  newSelection.remove(option);
+                } else {
+                  newSelection.add(option);
+                }
+                _handleAnswer(question.id, AnswerType.list, newSelection.toList());
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? colorScheme.primaryContainer.withOpacity(0.7)
+                      : colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected 
+                        ? colorScheme.primary
+                        : colorScheme.outline.withOpacity(0.3),
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isSelected 
+                            ? colorScheme.primary
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isSelected 
+                              ? colorScheme.primary
+                              : colorScheme.outline.withOpacity(0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              size: 16,
+                              color: colorScheme.onPrimary,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        option,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: isSelected 
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                          fontWeight: isSelected 
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSliderOption(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final minValue = (question.metadata?['min'] as num?)?.toDouble() ?? 0.0;
+    final maxValue = (question.metadata?['max'] as num?)?.toDouble() ?? 100.0;
+    final currentValue = (currentAnswer?.value as num?)?.toDouble() ?? 
+                        (question.metadata?['default'] as num?)?.toDouble() ?? 
+                        (minValue + maxValue) / 2;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              Text(
+                'Your Selection',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                currentValue.round().toString(),
+                style: theme.textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 48),
+        Slider(
+          value: currentValue,
+          min: minValue,
+          max: maxValue,
+          divisions: (maxValue - minValue).round(),
+          onChanged: (value) {
+            _handleAnswer(question.id, AnswerType.number, value);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTinderOptions(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final likedOptions = (currentAnswer?.value as List<String>?) ?? [];
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Swipe through styles!',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Liked ${likedOptions.length} styles',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              // Simulate liking some options
+              final mockLikes = question.options?.take(3).toList() ?? [];
+              _handleAnswer(question.id, AnswerType.list, mockLikes);
+            },
+            child: const Text('Simulate Swiping'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorPickerOptions(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final selectedColors = (currentAnswer?.value as List<String>?) ?? [];
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Choose your favorite colors!',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Selected ${selectedColors.length} colors',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              // Simulate color selection
+              final mockColors = ['#FF5722', '#2196F3', '#4CAF50'];
+              _handleAnswer(question.id, AnswerType.list, mockColors);
+            },
+            child: const Text('Select Colors'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageUploadOption(
+    StyleQuestion question,
+    StyleAnswer? currentAnswer,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final hasImage = currentAnswer?.value != null;
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: hasImage 
+                  ? colorScheme.primary.withOpacity(0.1)
+                  : colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: hasImage 
+                    ? colorScheme.primary.withOpacity(0.3)
+                    : colorScheme.outline.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              hasImage ? Icons.image : Icons.cloud_upload_outlined,
+              size: 48,
+              color: hasImage 
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            hasImage ? 'Image Uploaded ✓' : 'Upload Image',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: hasImage 
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withOpacity(0.8),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              // Simulate image upload
+              _handleAnswer(question.id, AnswerType.image, 'mock_image_path');
+            },
+            child: Text(hasImage ? 'Change Image' : 'Upload Image'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handles answering a question
+  void _handleAnswer(String questionId, AnswerType type, dynamic value) {
+    ref.read(styleDiscoveryControllerProvider.notifier).answerQuestion(
+      questionId, 
+      type, 
+      value,
+    );
+    
+    // Auto-advance for single-choice questions
+    final state = ref.read(styleDiscoveryControllerProvider);
+    final question = state.currentQuestion;
+    
+    if (question?.type == QuestionType.singleChoice) {
+      Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
-          setState(() {
-            _isAiTyping = false;
-            
-            // Move to the next question if not at the end
-            if (_currentQuestionIndex < _stylePreferences.length - 1) {
-              _currentQuestionIndex++;
-            } else {
-              // All questions answered, navigate to the next screen
-              // This would be replaced with actual navigation logic
-              _navigateToNextScreen();
-            }
-          });
+          ref.read(styleDiscoveryControllerProvider.notifier).nextQuestion();
         }
       });
     }
   }
 
-  // Navigate to the next screen in the onboarding flow
-  void _navigateToNextScreen() {
-    // In a real implementation, this would save the user's preferences
-    // and navigate to the next screen in the onboarding flow
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Style preferences saved! Moving to next screen...'),
-        duration: Duration(seconds: 2),
+  void _submitAnswers() async {
+    try {
+      final controller = ref.read(styleDiscoveryControllerProvider.notifier);
+      await controller.submitAnswers();
+      final profile = await controller.generateProfile();
+
+      setState(() {
+        _generatedProfile = profile;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to submit answers. Please try again.';
+      });
+    }
+  }
+
+  /// Builds loading state
+  Widget _buildLoadingState(ThemeData theme, ColorScheme colorScheme) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Loading your style journey...'),
+        ],
       ),
     );
-
-    // Delay to allow snackbar to show before navigation
-    Future.delayed(const Duration(seconds: 2), () {
-      // Navigate to login page or next onboarding screen
-      context.go('/login');
-    });
   }
 
-  // Retry loading the style preferences if there was an error
-  void _retryLoading() {
-    setState(() {
-      _hasError = false;
-      _errorMessage = '';
-    });
-    _loadStylePreferences();
-  }
-
-  // Skip the style discovery process and proceed to next screen
-  void _skipStyleDiscovery() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('We\'ll use default style settings for now. You can update them anytime!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    
-    // Navigate to login page or next onboarding screen
-    context.go('/login');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: AppBar(
-        title: Text(
-          'Discover Your Style',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+  /// Builds completion state
+  Widget _buildCompletionState(StyleDiscoveryState state, ThemeData theme, ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Success animation placeholder
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                size: 60,
+                color: Colors.green,
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            Text(
+              'Your Style Profile is Ready! ✨',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            const SizedBox(height: 16),
+            
+            Text(
+              'We\'ve analyzed your preferences and created a personalized style profile just for you.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            const SizedBox(height: 40),
+            
+            if (state.generatedProfile != null) ...[
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Your Primary Style',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      (state.generatedProfile!['primaryStyle'] as String?) ?? 'Unique',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: _skipStyleDiscovery,
-            child: Text(
-              'Skip',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: colorScheme.primary,
+      ),
+    );
+  }
+
+  /// Builds error state
+  Widget _buildErrorState(String message, ThemeData theme, ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Oops! Something went wrong',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(styleDiscoveryControllerProvider.notifier).resetQuiz();
+              },
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds navigation buttons
+  Widget _buildNavigationButtons(StyleDiscoveryState state, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          // Previous button
+          if (state.canGoPrevious)
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  ref.read(styleDiscoveryControllerProvider.notifier).previousQuestion();
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Previous',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          
+          if (state.canGoPrevious) const SizedBox(width: 16),
+          
+          // Next/Skip button
+          Expanded(
+            flex: state.canGoPrevious ? 1 : 2,
+            child: ElevatedButton(
+              onPressed: state.canGoNext
+                  ? () => ref.read(styleDiscoveryControllerProvider.notifier).nextQuestion()
+                  : (state.currentQuestion?.isRequired == false)
+                      ? () => ref.read(styleDiscoveryControllerProvider.notifier).skipQuestion()
+                      : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                state.canGoNext 
+                    ? (state.currentQuestionIndex == state.questions.length - 1 ? 'Finish' : 'Next')
+                    : 'Skip',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
         ],
       ),
-      body: _buildBody(theme, colorScheme),
-    );
-  }
-
-  Widget _buildBody(ThemeData theme, ColorScheme colorScheme) {
-    // Show loading state
-    if (_isLoading) {
-      return const SystemStateWidget(
-        icon: Icons.style,
-        message: 'Setting up your style discovery experience...',
-      );
-    }
-    
-    // Show error state
-    if (_hasError) {
-      return SystemStateWidget(
-        icon: Icons.error_outline,
-        iconColor: colorScheme.error,
-        message: _errorMessage,
-        onRetry: _retryLoading,
-        retryText: 'Try Again',
-      );
-    }
-
-    // Main content
-    return Column(
-      children: [
-        // Progress indicator
-        LinearProgressIndicator(
-          value: _userAnswers.isEmpty 
-              ? 0 
-              : _userAnswers.length / _stylePreferences.length,
-          backgroundColor: colorScheme.surfaceVariant,
-          color: colorScheme.primary,
-          minHeight: 4,
-        ),
-        
-        // Chat interface with questions and answers
-        Expanded(
-          child: OnboardingChatInterface(
-            preferences: _stylePreferences.sublist(0, _currentQuestionIndex + 1),
-            answers: _userAnswers,
-            isAiTyping: _isAiTyping,
-          ),
-        ),
-        
-        // Input area for answering the current question
-        if (_currentQuestionIndex < _stylePreferences.length && !_isAiTyping && _userAnswers.length <= _currentQuestionIndex)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              border: Border(
-                top: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: AnswerOptionWidget(
-                answerType: _stylePreferences[_currentQuestionIndex].answerType,
-                options: _stylePreferences[_currentQuestionIndex].options,
-                onAnswerSelected: _handleAnswerSubmitted,
-                enabled: !_isAiTyping,
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

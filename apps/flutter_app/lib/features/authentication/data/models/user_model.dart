@@ -9,6 +9,8 @@ class UserModel extends User {
     required super.id,
     required super.email,
     super.displayName,
+    super.fullName,
+    super.isEmailVerified,
     super.createdAt,
     super.lastSignInAt,
   });
@@ -18,10 +20,10 @@ class UserModel extends User {
     return UserModel(
       id: supabaseUser.id,
       email: supabaseUser.email ?? '',
-      displayName: supabaseUser.userMetadata?['full_name'] as String?,
-      createdAt: supabaseUser.createdAt != null 
-          ? DateTime.parse(supabaseUser.createdAt!)
-          : null,
+      displayName: supabaseUser.userMetadata?['display_name'] as String?,
+      fullName: supabaseUser.userMetadata?['full_name'] as String?,
+      isEmailVerified: supabaseUser.emailConfirmedAt != null,
+      createdAt: DateTime.parse(supabaseUser.createdAt),
       lastSignInAt: supabaseUser.lastSignInAt != null
           ? DateTime.parse(supabaseUser.lastSignInAt!)
           : null,
@@ -34,6 +36,8 @@ class UserModel extends User {
       id: json['id'] as String,
       email: json['email'] as String,
       displayName: json['display_name'] as String?,
+      fullName: json['full_name'] as String?,
+      isEmailVerified: json['is_email_verified'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -49,6 +53,8 @@ class UserModel extends User {
       'id': id,
       'email': email,
       'display_name': displayName,
+      'full_name': fullName,
+      'is_email_verified': isEmailVerified,
       'created_at': createdAt?.toIso8601String(),
       'last_sign_in_at': lastSignInAt?.toIso8601String(),
     };
@@ -60,6 +66,8 @@ class UserModel extends User {
       id: id,
       email: email,
       displayName: displayName,
+      fullName: fullName,
+      isEmailVerified: isEmailVerified,
       createdAt: createdAt,
       lastSignInAt: lastSignInAt,
     );
@@ -71,6 +79,8 @@ class UserModel extends User {
     String? id,
     String? email,
     String? displayName,
+    String? fullName,
+    bool? isEmailVerified,
     DateTime? createdAt,
     DateTime? lastSignInAt,
   }) {
@@ -78,6 +88,8 @@ class UserModel extends User {
       id: id ?? this.id,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
+      fullName: fullName ?? this.fullName,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       createdAt: createdAt ?? this.createdAt,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
     );

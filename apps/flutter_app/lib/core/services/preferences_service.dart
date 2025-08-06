@@ -120,6 +120,18 @@ class PreferencesService {
     return prefs.getInt(key) ?? defaultValue;
   }
 
+  /// Store custom double preference
+  Future<void> setDouble(String key, double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(key, value);
+  }
+
+  /// Get custom double preference
+  Future<double> getDouble(String key, {double defaultValue = 0.0}) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(key) ?? defaultValue;
+  }
+
   /// Remove specific preference
   Future<void> remove(String key) async {
     final prefs = await SharedPreferences.getInstance();

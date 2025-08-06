@@ -135,18 +135,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _onForgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Password reset link will be sent to your email'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Theme.of(context).colorScheme.onPrimary,
-          onPressed: () {},
-        ),
-      ),
-    );
+    context.push('/forgot-password');
   }
 
   void _onSignUp() {

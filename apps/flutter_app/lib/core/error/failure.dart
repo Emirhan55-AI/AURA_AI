@@ -111,6 +111,14 @@ class AuthFailure extends Failure {
           message: 'You don\'t have permission to perform this action.',
           code: code,
         );
+
+  /// Named constructor for not authenticated
+  const AuthFailure.notAuthenticated({
+    String? code,
+  }) : super(
+          message: 'User is not authenticated. Please sign in.',
+          code: code,
+        );
 }
 
 /// Local storage and cache-related failures

@@ -5,6 +5,7 @@ import '../../../../core/error/failure.dart';
 import '../../domain/entities/clothing_item.dart';
 import '../../domain/repositories/i_user_wardrobe_repository.dart';
 import '../../data/providers/wardrobe_providers.dart';
+import '../../../wardrobe/providers/repository_providers.dart';
 
 part 'wardrobe_controller.g.dart';
 
@@ -19,10 +20,106 @@ class WardrobeController extends _$WardrobeController {
   int _currentPage = 1;
   static const int _itemsPerPage = 20;
 
+  // Multi-select state
+  bool _isMultiSelectMode = false;
+  Set<String> _selectedItemsInMultiSelect = <String>{};
+
   @override
   Future<List<ClothingItem>> build() async {
-    // Start with empty list - actual loading will be triggered by UI
-    return [];
+    final wardrobeRepository = ref.read(wardrobeRepositoryProvider);
+
+    // Apply filters and search term
+    final result = await wardrobeRepository.getClothingItems();
+
+    return result.fold(
+      (Failure failure) {
+        throw Exception('Failed to load clothing items: ${failure.message}');
+      },
+      (List<ClothingItem> items) => items,
+    );
+  }
+
+  /// Mock data for testing wardrobe functionality
+  List<ClothingItem> _getMockClothingItems() {
+    return [
+      ClothingItem(
+        id: '1',
+        userId: 'test-user',
+        name: 'Blue Denim Jacket',
+        category: 'Outerwear',
+        color: 'Blue',
+        brand: 'Levi\'s',
+        size: 'M',
+        isFavorite: true,
+        createdAt: DateTime.now().subtract(const Duration(days: 10)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+        imageUrl: 'https://picsum.photos/300/400?random=1',
+      ),
+      ClothingItem(
+        id: '2',
+        userId: 'test-user',
+        name: 'Black Skinny Jeans',
+        category: 'Bottoms',
+        color: 'Black',
+        brand: 'Zara',
+        size: '32',
+        isFavorite: false,
+        createdAt: DateTime.now().subtract(const Duration(days: 8)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 3)),
+        imageUrl: 'https://picsum.photos/300/400?random=2',
+      ),
+      ClothingItem(
+        id: '3',
+        userId: 'test-user',
+        name: 'White Cotton T-Shirt',
+        category: 'Tops',
+        color: 'White',
+        brand: 'H&M',
+        size: 'L',
+        isFavorite: true,
+        createdAt: DateTime.now().subtract(const Duration(days: 15)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 12)),
+        imageUrl: 'https://picsum.photos/300/400?random=3',
+      ),
+      ClothingItem(
+        id: '4',
+        userId: 'test-user',
+        name: 'Red Summer Dress',
+        category: 'Dresses',
+        color: 'Red',
+        brand: 'Mango',
+        size: 'S',
+        isFavorite: false,
+        createdAt: DateTime.now().subtract(const Duration(days: 5)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+        imageUrl: 'https://picsum.photos/300/400?random=4',
+      ),
+      ClothingItem(
+        id: '5',
+        userId: 'test-user',
+        name: 'Brown Leather Boots',
+        category: 'Shoes',
+        color: 'Brown',
+        brand: 'Dr. Martens',
+        size: '9',
+        isFavorite: true,
+        createdAt: DateTime.now().subtract(const Duration(days: 20)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 18)),
+        imageUrl: 'https://picsum.photos/300/400?random=5',
+      ),
+      ClothingItem(
+        id: '6',
+        userId: 'test-user',
+        name: 'Gold Chain Necklace',
+        category: 'Accessories',
+        color: 'Gold',
+        brand: 'Pandora',
+        isFavorite: false,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        updatedAt: DateTime.now().subtract(const Duration(days: 25)),
+        imageUrl: 'https://picsum.photos/300/400?random=6',
+      ),
+    ];
   }
 
   /// Gets the current repository instance
@@ -326,6 +423,93 @@ class WardrobeController extends _$WardrobeController {
       recentItems: recentItems,
       categories: categories,
     );
+  }
+
+  // Multi-select functionality
+  bool get isMultiSelectMode => _isMultiSelectMode;
+  Set<String> get selectedItemsInMultiSelect => _selectedItemsInMultiSelect;
+
+  /// Enters multi-select mode
+  void enterMultiSelectMode() {
+    _isMultiSelectMode = true;
+    _selectedItemsInMultiSelect.clear();
+    ref.invalidateSelf(); // Trigger UI update
+  }
+
+  /// Exits multi-select mode
+  void exitMultiSelectMode() {
+    _isMultiSelectMode = false;
+    _selectedItemsInMultiSelect.clear();
+    ref.invalidateSelf(); // Trigger UI update
+  }
+
+  /// Toggles item selection in multi-select mode
+  void toggleItemSelectionInMultiSelect(String itemId) {
+    if (_selectedItemsInMultiSelect.contains(itemId)) {
+      _selectedItemsInMultiSelect.remove(itemId);
+    } else {
+      _selectedItemsInMultiSelect.add(itemId);
+    }
+    ref.invalidateSelf(); // Trigger UI update
+  }
+
+  /// Deletes all selected items in multi-select mode
+  Future<void> deleteSelectedItems() async {
+    if (_selectedItemsInMultiSelect.isEmpty) return;
+
+    try {
+      // For now, just remove from local state (mock implementation)
+      final currentItems = state.valueOrNull ?? [];
+      final updatedItems = currentItems.where(
+        (item) => !_selectedItemsInMultiSelect.contains(item.id)
+      ).toList();
+
+      // Exit multi-select mode
+      exitMultiSelectMode();
+
+      // Update state with filtered items
+      state = AsyncValue.data(updatedItems);
+
+      // TODO: In real implementation, call repository to delete items
+      // final repository = ref.read(userWardrobeRepositoryProvider);
+      // await repository.deleteItems(_selectedItemsInMultiSelect.toList());
+      
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  void updateSearchTerm(String searchTerm) {
+    _searchTerm = searchTerm;
+    ref.invalidateSelf();
+  }
+
+  void updateFilters({
+    List<String>? categoryIds,
+    List<String>? seasons,
+    bool? showOnlyFavorites,
+    String? sortBy,
+  }) {
+    if (categoryIds != null) _selectedCategoryIds = categoryIds;
+    if (seasons != null) _selectedSeasons = seasons;
+    if (showOnlyFavorites != null) _showOnlyFavorites = showOnlyFavorites;
+    if (sortBy != null) _sortBy = sortBy;
+    ref.invalidateSelf();
+  }
+
+  void loadNextPage() {
+    _currentPage++;
+    ref.invalidateSelf();
+  }
+
+  void resetFilters() {
+    _searchTerm = '';
+    _selectedCategoryIds = [];
+    _selectedSeasons = [];
+    _showOnlyFavorites = false;
+    _sortBy = 'created_at';
+    _currentPage = 1;
+    ref.invalidateSelf();
   }
 }
 

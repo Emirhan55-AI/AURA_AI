@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura AI API Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            color: #FF6F61;
+            margin-top: 0;
+        }
+        button {
+            background: #FF6F61;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #e55a4f;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Aura AI API Test</h1>
+        
+        <div class="test-section">
+            <h3>📡 API Connectivity Test</h3>
+            <button onclick="testConnectivity()">Test Connection</button>
+            <div id="connectivity-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📄 API Documentation</h3>
+            <button onclick="testDocs()">Check Documentation</button>
+            <div id="docs-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🖼️ Image Processing Test</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="testImageUpload()">Upload & Analyze Image</button>
+            <div id="image-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💬 Style Recommendation Test</h3>
+            <button onclick="testRecommendation()">Get Style Recommendation</button>
+            <div id="recommendation-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // CORS proxy kullanarak API'ye erişim
+        const API_BASE = 'https://cors-anywhere.herokuapp.com/https://aura-one-sigma.vercel.app';
+        // Alternatif proxy: const API_BASE = 'https://api.allorigins.win/raw?url=https://aura-one-sigma.vercel.app';
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${content}</div>`;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result loading">🔄 Loading...</div>`;
+        }
+
+        async function testConnectivity() {
+            showLoading('connectivity-result');
+            try {
+                const response = await fetch(API_BASE);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('connectivity-result', 
+                        `✅ SUCCESS!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    showResult('connectivity-result', 
+                        `❌ API Error\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('connectivity-result', 
+                    `❌ Connection Failed\nError: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testDocs() {
+            showLoading('docs-result');
+            try {
+                const response = await fetch(`${API_BASE}/docs`);
+                
+                if (response.ok) {
+                    showResult('docs-result', 
+                        `✅ Documentation Available!\nStatus: ${response.status}\nContent-Type: ${response.headers.get('content-type')}`, 
+                        'success');
+                } else {
+                    showResult('docs-result', 
+                        `❌ Documentation Error\nStatus: ${response.status}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('docs-result', 
+                    `❌ Documentation Failed\nError: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testImageUpload() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showResult('image-result', '⚠️ Please select an image first!', 'error');
+                return;
+            }
+
+            showLoading('image-result');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/process-image/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('image-result', 
+                        `✅ Image Analysis SUCCESS!\nStatus: ${response.status}\nResult: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    showResult('image-result', 
+                        `❌ Image Analysis Failed\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('image-result', 
+                    `❌ Upload Failed\nError: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testRecommendation() {
+            showLoading('recommendation-result');
+            
+            try {
+                const testData = {
+                    user_preferences: {
+                        style: "casual",
+                        color_preferences: ["blue", "black"],
+                        occasion: "everyday"
+                    },
+                    wardrobe_items: [
+                        {
+                            category: "shirt",
+                            color: "blue",
+                            style: "casual"
+                        }
+                    ]
+                };
+
+                const response = await fetch(`${API_BASE}/get-recommendation/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('recommendation-result', 
+                        `✅ Recommendation SUCCESS!\nStatus: ${response.status}\nResult: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    showResult('recommendation-result', 
+                        `❌ Recommendation Failed\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('recommendation-result', 
+                    `❌ Recommendation Failed\nError: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        // Auto-test connectivity on page load
+        window.onload = function() {
+            testConnectivity();
+        };
+    </script>
+</body>
+</html>

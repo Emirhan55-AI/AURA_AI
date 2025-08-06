@@ -10,6 +10,12 @@ class User {
   /// User's display name (optional)
   final String? displayName;
   
+  /// User's full name
+  final String? fullName;
+  
+  /// Whether the user's email is verified
+  final bool isEmailVerified;
+  
   /// Timestamp when the user was created
   final DateTime? createdAt;
   
@@ -20,6 +26,8 @@ class User {
     required this.id,
     required this.email,
     this.displayName,
+    this.fullName,
+    this.isEmailVerified = false,
     this.createdAt,
     this.lastSignInAt,
   });
@@ -29,6 +37,8 @@ class User {
     String? id,
     String? email,
     String? displayName,
+    String? fullName,
+    bool? isEmailVerified,
     DateTime? createdAt,
     DateTime? lastSignInAt,
   }) {
@@ -36,6 +46,8 @@ class User {
       id: id ?? this.id,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
+      fullName: fullName ?? this.fullName,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       createdAt: createdAt ?? this.createdAt,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
     );
@@ -49,6 +61,8 @@ class User {
         other.id == id &&
         other.email == email &&
         other.displayName == displayName &&
+        other.fullName == fullName &&
+        other.isEmailVerified == isEmailVerified &&
         other.createdAt == createdAt &&
         other.lastSignInAt == lastSignInAt;
   }
@@ -58,6 +72,8 @@ class User {
     return id.hashCode ^
         email.hashCode ^
         displayName.hashCode ^
+        fullName.hashCode ^
+        isEmailVerified.hashCode ^
         createdAt.hashCode ^
         lastSignInAt.hashCode;
   }

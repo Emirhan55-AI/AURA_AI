@@ -77,18 +77,24 @@ class AuthService {
     }
   }
 
-  /// Registers a new user with email and password
+  /// Registers a new user with email, password and additional info
   /// 
   /// Returns [Right(User)] on successful registration
   /// Returns [Left(Failure)] on registration failure
-  Future<Either<Failure, User>> signUpWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
+  Future<Either<Failure, User>> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String fullName,
+    List<String>? stylePreferences,
+  }) async {
     try {
       final response = await _supabaseClient.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'full_name': fullName,
+          'style_preferences': stylePreferences ?? [],
+        },
       );
 
       if (response.user == null) {
@@ -102,6 +108,56 @@ class AuthService {
     } catch (e) {
       return Left(UnknownFailure(message: 'Unexpected error during sign up: ${e.toString()}'));
     }
+  }
+
+  /// Sends email verification code to user's email
+  /// 
+  /// Returns [Right(void)] on successful email sent
+  /// Returns [Left(Failure)] on failure to send email
+  Future<Either<Failure, void>> sendEmailVerification(String email) async {
+    try {
+      await _supabaseClient.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(_mapAuthException(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: 'Error sending verification email: ${e.toString()}'));
+    }
+  }
+
+  /// Verifies email with the provided verification code
+  /// 
+  /// Returns [Right(void)] on successful verification
+  /// Returns [Left(Failure)] on verification failure
+  Future<Either<Failure, void>> verifyEmailCode(String email, String code) async {
+    try {
+      final response = await _supabaseClient.auth.verifyOTP(
+        type: OtpType.signup,
+        email: email,
+        token: code,
+      );
+
+      if (response.user == null) {
+        return Left(AuthFailure(message: 'Email verification failed'));
+      }
+
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(_mapAuthException(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: 'Error verifying email: ${e.toString()}'));
+    }
+  }
+
+  /// Resends email verification code
+  /// 
+  /// Returns [Right(void)] on successful resend
+  /// Returns [Left(Failure)] on failure to resend
+  Future<Either<Failure, void>> resendEmailVerification(String email) async {
+    return await sendEmailVerification(email);
   }
 
   /// Sends a password reset email

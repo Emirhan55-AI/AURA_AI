@@ -6,6 +6,7 @@ import '../widgets/aura_score_display.dart';
 import '../widgets/profile_stats_row.dart';
 import '../widgets/profile_tab_bar.dart';
 import '../widgets/profile_tab_bar_view.dart';
+import '../widgets/analytics_dashboard_widget.dart';
 import '../controllers/user_profile_controller.dart';
 
 /// User Profile Screen - Central control panel for user profile management

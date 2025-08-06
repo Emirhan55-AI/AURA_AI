@@ -1,10 +1,12 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-// import 'package:image_cropper/image_cropper.dart'; // Temporarily disabled
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failure.dart';
+import '../../../../core/providers/service_providers.dart';
+import '../../../../core/services/aura_ai_service.dart';
 import '../../domain/entities/clothing_item.dart';
 import '../../domain/repositories/i_user_wardrobe_repository.dart';
 import '../../data/providers/wardrobe_providers.dart';
@@ -102,6 +104,9 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
 
   /// Gets the current repository instance
   IUserWardrobeRepository get _repository => ref.read(userWardrobeRepositoryProvider);
+  
+  /// Gets the AI service instance
+  AuraAiService get _aiService => ref.read(auraAiServiceProvider);
 
   /// Computed property to check if form is valid
   bool get isFormValid {
@@ -265,7 +270,7 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
     state = state.copyWith(customTags: currentTags);
   }
 
-  /// Simulate AI tagging (mock implementation)
+  /// Perform AI analysis on the selected image
   Future<void> performAiTagging() async {
     if (state.pickedImage == null) return;
 
@@ -275,28 +280,63 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
         hasAiTaggingError: false,
       );
 
-      // Simulate AI processing delay
-      await Future<void>.delayed(const Duration(seconds: 3));
+      // Convert XFile to File for AI service
+      final File imageFile = File(state.pickedImage!.path);
+      
+      // Call the real AI service
+      final result = await _aiService.processImage(imageFile);
+      
+      result.fold(
+        (failure) {
+          // Handle AI service failure
+          state = state.copyWith(
+            isAiTaggingLoading: false,
+            hasAiTaggingError: true,
+          );
+        },
+        (analysisResult) {
+          // Apply AI analysis results to the form
+          final currentTags = Set<String>.from(state.customTags);
+          final currentSeasons = Set<String>.from(state.selectedSeasons);
+          
+          // Add detected style and pattern as tags
+          if (analysisResult.style.isNotEmpty && analysisResult.style != 'unknown') {
+            currentTags.add(analysisResult.style);
+          }
+          
+          if (analysisResult.pattern.isNotEmpty && analysisResult.pattern != 'unknown') {
+            currentTags.add(analysisResult.pattern);
+          }
+          
+          // Add material as tag if detected
+          if (analysisResult.material.isNotEmpty && analysisResult.material != 'unknown') {
+            currentTags.add(analysisResult.material);
+          }
+          
+          // Add season if detected
+          if (analysisResult.season.isNotEmpty) {
+            currentSeasons.add(_capitalizeFirst(analysisResult.season));
+          }
+          
+          // Map AI category to our app categories
+          String? mappedCategory = _mapAiCategoryToAppCategory(analysisResult.category);
+          
+          // Use the detected color or keep existing
+          String? detectedColor;
+          if (analysisResult.color.isNotEmpty && analysisResult.color != 'unknown') {
+            detectedColor = _capitalizeFirst(analysisResult.color);
+          }
 
-      // Mock AI response - in real implementation, this would be an actual AI service call
-      final mockTags = {'casual', 'summer', 'cotton', 'comfortable'};
-      final mockCategory = 'Tops';
-      final mockColor = 'Blue';
-
-      final currentTags = Set<String>.from(state.customTags);
-      currentTags.addAll(mockTags);
-
-      final currentSeasons = Set<String>.from(state.selectedSeasons);
-      currentSeasons.add('Summer');
-
-      state = state.copyWith(
-        customTags: currentTags,
-        selectedCategory: mockCategory,
-        selectedColor: mockColor,
-        selectedSeasons: currentSeasons,
-        isAiTaggingLoading: false,
-        categoryError: null,
-        colorError: null,
+          state = state.copyWith(
+            customTags: currentTags,
+            selectedCategory: mappedCategory ?? state.selectedCategory,
+            selectedColor: detectedColor ?? state.selectedColor,
+            selectedSeasons: currentSeasons,
+            isAiTaggingLoading: false,
+            categoryError: mappedCategory != null ? null : state.categoryError,
+            colorError: detectedColor != null ? null : state.colorError,
+          );
+        },
       );
     } catch (e) {
       state = state.copyWith(
@@ -304,6 +344,41 @@ class AddClothingItemController extends StateNotifier<AddClothingItemState> {
         hasAiTaggingError: true,
       );
     }
+  }
+
+  /// Map AI detected category to app categories
+  String? _mapAiCategoryToAppCategory(String aiCategory) {
+    final categoryMap = {
+      'shirt': 'Tops',
+      'blouse': 'Tops',
+      'sweater': 'Tops',
+      'hoodie': 'Tops',
+      'jacket': 'Outerwear',
+      'coat': 'Outerwear',
+      'pants': 'Bottoms',
+      'jeans': 'Bottoms',
+      'shorts': 'Bottoms',
+      'skirt': 'Bottoms',
+      'dress': 'Dresses',
+      'shoes': 'Shoes',
+      'sneakers': 'Shoes',
+      'boots': 'Shoes',
+      'sandals': 'Shoes',
+      'bag': 'Accessories',
+      'hat': 'Accessories',
+      'scarf': 'Accessories',
+      'belt': 'Accessories',
+      'jewelry': 'Accessories',
+    };
+    
+    final normalizedCategory = aiCategory.toLowerCase();
+    return categoryMap[normalizedCategory];
+  }
+
+  /// Capitalize first letter of a string
+  String _capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
   /// Reset AI tagging error state

@@ -1,10 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
+import '../../domain/models/planned_outfit.dart';
+import '../../domain/repositories/wardrobe_planner_repository.dart';
+import '../../data/repositories/wardrobe_planner_repository_impl.dart';
 import '../../../outfits/domain/entities/outfit.dart';
-import '../widgets/planner/combination_drag_target.dart'; // For PlannedOutfit and WeatherData
+import '../../../../core/error/failure.dart';
 
 part 'wardrobe_planner_controller.g.dart';
+
+// Repository provider
+@Riverpod(keepAlive: true)
+WardrobePlannerRepository wardrobePlannerRepository(WardrobePlannerRepositoryRef ref) {
+  return WardrobePlannerRepositoryImpl();
+}
 
 /// State class for managing wardrobe planner screen state
 class WardrobePlannerState {
@@ -15,6 +22,8 @@ class WardrobePlannerState {
   final AsyncValue<void> operationState;
   final List<Outfit> availableOutfits;
   final Outfit? draggingOutfit;
+  final Map<String, dynamic>? stats;
+  final bool isWeekView;
 
   const WardrobePlannerState({
     required this.plannedOutfits,
@@ -24,6 +33,8 @@ class WardrobePlannerState {
     required this.operationState,
     required this.availableOutfits,
     this.draggingOutfit,
+    this.stats,
+    this.isWeekView = true,
   });
 
   /// Initial state with loading planned outfits
@@ -36,6 +47,8 @@ class WardrobePlannerState {
       operationState: const AsyncValue<void>.data(null),
       availableOutfits: [],
       draggingOutfit: null,
+      stats: null,
+      isWeekView: true,
     );
   }
 
@@ -48,6 +61,8 @@ class WardrobePlannerState {
     AsyncValue<void>? operationState,
     List<Outfit>? availableOutfits,
     Outfit? draggingOutfit,
+    Map<String, dynamic>? stats,
+    bool? isWeekView,
   }) {
     return WardrobePlannerState(
       plannedOutfits: plannedOutfits ?? this.plannedOutfits,
@@ -57,6 +72,8 @@ class WardrobePlannerState {
       operationState: operationState ?? this.operationState,
       availableOutfits: availableOutfits ?? this.availableOutfits,
       draggingOutfit: draggingOutfit ?? this.draggingOutfit,
+      stats: stats ?? this.stats,
+      isWeekView: isWeekView ?? this.isWeekView,
     );
   }
 }
@@ -73,6 +90,7 @@ class WardrobePlannerController extends _$WardrobePlannerController {
       loadPlannedOutfits();
       loadAvailableOutfits();
       _loadInitialWeatherData();
+      loadPlanningStats();
     });
     
     return initialState;
@@ -85,33 +103,46 @@ class WardrobePlannerController extends _$WardrobePlannerController {
         plannedOutfits: const AsyncValue<List<PlannedOutfit>>.loading(),
       );
 
-      // TODO: Replace with actual repository call when implemented
-      // For now, use placeholder data
-      await Future<void>.delayed(const Duration(seconds: 1));
-      
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
       final now = DateTime.now();
-      final mockPlannedOutfits = [
-        PlannedOutfit(
-          id: 'planned1',
-          date: DateTime(now.year, now.month, now.day + 1),
-          outfitId: 'outfit1',
-          outfit: _createMockOutfit('outfit1', 'Casual Friday'),
-        ),
-        PlannedOutfit(
-          id: 'planned2',
-          date: DateTime(now.year, now.month, now.day + 3),
-          outfitId: 'outfit2',
-          outfit: _createMockOutfit('outfit2', 'Summer Dress'),
-        ),
-      ];
+      final startDate = now.subtract(const Duration(days: 7));
+      final endDate = now.add(const Duration(days: 14));
+      
+      final result = await repository.getPlannedOutfits(
+        startDate: startDate,
+        endDate: endDate,
+      );
 
-      state = state.copyWith(
-        plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(mockPlannedOutfits),
+      result.fold(
+        (Failure failure) => state = state.copyWith(
+          plannedOutfits: AsyncValue<List<PlannedOutfit>>.error(
+            failure.message, 
+            StackTrace.current,
+          ),
+        ),
+        (List<PlannedOutfit> outfits) => state = state.copyWith(
+          plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(outfits),
+        ),
       );
     } catch (e, stackTrace) {
       state = state.copyWith(
         plannedOutfits: AsyncValue<List<PlannedOutfit>>.error(e, stackTrace),
       );
+    }
+  }
+
+  /// Loads planning statistics
+  Future<void> loadPlanningStats() async {
+    try {
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
+      final result = await repository.getPlanningStats();
+      
+      result.fold(
+        (failure) => <String, String>{}, // Silently handle stats error
+        (stats) => state = state.copyWith(stats: stats),
+      );
+    } catch (e) {
+      // Silently handle error for stats as it's not critical
     }
   }
 
@@ -142,22 +173,25 @@ class WardrobePlannerController extends _$WardrobePlannerController {
         weatherData: const AsyncValue<Map<DateTime, WeatherData>>.loading(),
       );
 
-      // TODO: Replace with actual weather service call
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
+      final startDate = dates.first;
+      final endDate = dates.last;
       
-      final weatherMap = <DateTime, WeatherData>{};
-      for (int i = 0; i < dates.length; i++) {
-        final date = _normalizeDate(dates[i]);
-        weatherMap[date] = WeatherData(
-          condition: ['sunny', 'cloudy', 'rainy'][i % 3],
-          temperature: 18 + (i % 15),
-          description: ['Sunny', 'Cloudy', 'Light Rain'][i % 3],
-          icon: [Icons.wb_sunny, Icons.cloud, Icons.umbrella][i % 3],
-        );
-      }
+      final result = await repository.getWeatherData(
+        startDate: startDate,
+        endDate: endDate,
+      );
 
-      state = state.copyWith(
-        weatherData: AsyncValue<Map<DateTime, WeatherData>>.data(weatherMap),
+      result.fold(
+        (Failure failure) => state = state.copyWith(
+          weatherData: AsyncValue<Map<DateTime, WeatherData>>.error(
+            failure.message,
+            StackTrace.current,
+          ),
+        ),
+        (Map<DateTime, WeatherData> weatherMap) => state = state.copyWith(
+          weatherData: AsyncValue<Map<DateTime, WeatherData>>.data(weatherMap),
+        ),
       );
     } catch (e, stackTrace) {
       state = state.copyWith(
@@ -179,9 +213,80 @@ class WardrobePlannerController extends _$WardrobePlannerController {
     state = state.copyWith(selectedDate: date);
   }
 
+  /// Toggles between week and month view
+  void toggleView() {
+    state = state.copyWith(isWeekView: !state.isWeekView);
+  }
+
   /// Handles the start of dragging an outfit
   void startDraggingOutfit(Outfit outfit) {
     state = state.copyWith(draggingOutfit: outfit);
+  }
+
+  /// Sets the dragging outfit state (null to clear)
+  void setDraggingOutfit(Outfit? outfit) {
+    state = state.copyWith(draggingOutfit: outfit);
+  }
+
+  /// Sets the selected date
+  void setSelectedDate(DateTime date) {
+    state = state.copyWith(selectedDate: date);
+  }
+
+  /// Toggles view mode between week and month
+  void toggleViewMode() {
+    state = state.copyWith(isWeekView: !state.isWeekView);
+  }
+
+  /// Loads initial data for the screen
+  Future<void> loadInitialData() async {
+    await Future.wait([
+      loadPlannedOutfits(),
+      loadWeatherData(),
+      loadAvailableOutfits(),
+      loadPlanningStats(),
+    ]);
+  }
+
+  /// Refreshes all data
+  Future<void> refreshData() async {
+    await loadInitialData();
+  }
+
+  /// Plans an outfit for a specific date
+  Future<void> planOutfitForDate(Outfit outfit, DateTime date) async {
+    await dropOutfit(date, outfit);
+  }
+
+  /// Deletes a planned outfit
+  Future<void> deletePlannedOutfit(String plannedOutfitId) async {
+    try {
+      state = state.copyWith(
+        operationState: const AsyncValue<void>.loading(),
+      );
+
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
+      final result = await repository.deletePlannedOutfit(plannedOutfitId);
+
+      await result.fold(
+        (failure) async {
+          state = state.copyWith(
+            operationState: AsyncValue<void>.error(failure, StackTrace.current),
+          );
+        },
+        (_) async {
+          // Refresh the planned outfits after deletion
+          await loadPlannedOutfits();
+          state = state.copyWith(
+            operationState: const AsyncValue<void>.data(null),
+          );
+        },
+      );
+    } catch (e, stackTrace) {
+      state = state.copyWith(
+        operationState: AsyncValue<void>.error(e, stackTrace),
+      );
+    }
   }
 
   /// Handles dropping an outfit onto a date
@@ -202,7 +307,9 @@ class WardrobePlannerController extends _$WardrobePlannerController {
           id: 'pending_${DateTime.now().millisecondsSinceEpoch}',
           date: normalizedDate,
           outfitId: outfit.id,
-          outfit: outfit,
+          outfitName: outfit.name,
+          clothingItemIds: outfit.clothingItemIds,
+          createdAt: DateTime.now(),
         );
         
         state = state.copyWith(
@@ -230,7 +337,16 @@ class WardrobePlannerController extends _$WardrobePlannerController {
         pendingDropPlan: null,
       );
 
-      await _savePlannedOutfit(plan.date, plan.outfit);
+      final outfitForPlan = Outfit(
+        id: plan.outfitId,
+        userId: 'user1', // TODO: Get from auth
+        name: plan.outfitName ?? 'Untitled Outfit',
+        clothingItemIds: plan.clothingItemIds,
+        createdAt: plan.createdAt,
+        updatedAt: plan.createdAt,
+      );
+
+      await _savePlannedOutfit(plan.date, outfitForPlan);
     } catch (e, stackTrace) {
       state = state.copyWith(
         operationState: AsyncValue<void>.error(e, stackTrace),
@@ -250,22 +366,77 @@ class WardrobePlannerController extends _$WardrobePlannerController {
         operationState: const AsyncValue<void>.loading(),
       );
 
-      // TODO: Replace with actual repository call
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
+      final result = await repository.deletePlannedOutfit(planId);
 
-      // Remove from current state
-      final currentPlans = state.plannedOutfits.valueOrNull ?? [];
-      final updatedPlans = currentPlans.where((plan) => plan.id != planId).toList();
-
-      state = state.copyWith(
-        plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(updatedPlans),
-        operationState: const AsyncValue<void>.data(null),
+      result.fold(
+        (failure) => state = state.copyWith(
+          operationState: AsyncValue<void>.error(
+            failure.message,
+            StackTrace.current,
+          ),
+        ),
+        (_) {
+          // Remove from current state
+          final currentPlans = state.plannedOutfits.valueOrNull ?? [];
+          final updatedPlans = currentPlans.where((plan) => plan.id != planId).toList();
+          
+          state = state.copyWith(
+            plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(updatedPlans),
+            operationState: const AsyncValue<void>.data(null),
+          );
+        },
       );
     } catch (e, stackTrace) {
       state = state.copyWith(
         operationState: AsyncValue<void>.error(e, stackTrace),
       );
     }
+  }
+
+  /// Mark outfit as completed
+  Future<void> markOutfitCompleted(String planId) async {
+    try {
+      final repository = ref.read(wardrobePlannerRepositoryProvider);
+      final result = await repository.markOutfitCompleted(planId);
+      
+      result.fold(
+        (failure) => state = state.copyWith(
+          operationState: AsyncValue<void>.error(
+            failure.message,
+            StackTrace.current,
+          ),
+        ),
+        (completedOutfit) {
+          final currentPlans = state.plannedOutfits.valueOrNull ?? [];
+          final updatedPlans = currentPlans.map((plan) => 
+            plan.id == completedOutfit.id ? completedOutfit : plan
+          ).toList();
+          
+          state = state.copyWith(
+            plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(updatedPlans),
+          );
+        },
+      );
+    } catch (e, stackTrace) {
+      state = state.copyWith(
+        operationState: AsyncValue<void>.error(e, stackTrace),
+      );
+    }
+  }
+
+  /// Get weather-based suggestions for a date
+  Future<List<String>> getWeatherSuggestions(DateTime date) async {
+    final repository = ref.read(wardrobePlannerRepositoryProvider);
+    final result = await repository.getWeatherBasedSuggestions(
+      date: date,
+      availableItems: [], // Would be populated from wardrobe
+    );
+    
+    return result.fold(
+      (failure) => ['Failed to load suggestions'],
+      (suggestions) => suggestions,
+    );
   }
 
   /// Retries loading planned outfits
@@ -280,8 +451,7 @@ class WardrobePlannerController extends _$WardrobePlannerController {
 
   /// Retries the last failed operation
   Future<void> retryLastOperation() async {
-    // TODO: Implement retry logic based on what the last operation was
-    // For now, just reset the operation state
+    // Reset the operation state
     state = state.copyWith(
       operationState: const AsyncValue<void>.data(null),
     );
@@ -289,24 +459,36 @@ class WardrobePlannerController extends _$WardrobePlannerController {
 
   /// Internal method to save a planned outfit
   Future<void> _savePlannedOutfit(DateTime date, Outfit outfit) async {
-    // TODO: Replace with actual repository call
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
+    final repository = ref.read(wardrobePlannerRepositoryProvider);
     final normalizedDate = _normalizeDate(date);
+    
     final newPlan = PlannedOutfit(
       id: 'plan_${DateTime.now().millisecondsSinceEpoch}',
       date: normalizedDate,
       outfitId: outfit.id,
-      outfit: outfit,
+      outfitName: outfit.name,
+      clothingItemIds: outfit.clothingItemIds,
+      createdAt: DateTime.now(),
     );
 
-    // Add to current plans
-    final currentPlans = state.plannedOutfits.valueOrNull ?? [];
-    final updatedPlans = [...currentPlans, newPlan];
-
-    state = state.copyWith(
-      plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(updatedPlans),
-      operationState: const AsyncValue<void>.data(null),
+    final result = await repository.createPlannedOutfit(newPlan);
+    
+    result.fold(
+      (failure) => state = state.copyWith(
+        operationState: AsyncValue<void>.error(
+          failure.message,
+          StackTrace.current,
+        ),
+      ),
+      (createdOutfit) {
+        final currentPlans = state.plannedOutfits.valueOrNull ?? [];
+        final updatedPlans = [...currentPlans, createdOutfit];
+        
+        state = state.copyWith(
+          plannedOutfits: AsyncValue<List<PlannedOutfit>>.data(updatedPlans),
+          operationState: const AsyncValue<void>.data(null),
+        );
+      },
     );
   }
 
@@ -314,7 +496,8 @@ class WardrobePlannerController extends _$WardrobePlannerController {
   bool _shouldShowWeatherWarning(WeatherData weather) {
     return weather.temperature > 30 || 
            weather.temperature < 5 || 
-           weather.condition.toLowerCase().contains('rain');
+           weather.condition == WeatherCondition.rainy ||
+           weather.condition == WeatherCondition.stormy;
   }
 
   /// Creates a mock outfit for testing
@@ -334,4 +517,53 @@ class WardrobePlannerController extends _$WardrobePlannerController {
   DateTime _normalizeDate(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
+
+  // Convenience getters
+  PlannedOutfit? getOutfitForDate(DateTime date) {
+    final outfits = state.plannedOutfits.valueOrNull ?? [];
+    return outfits.where((outfit) =>
+      outfit.date.day == date.day &&
+      outfit.date.month == date.month &&
+      outfit.date.year == date.year
+    ).firstOrNull;
+  }
+
+  WeatherData? getWeatherForDate(DateTime date) {
+    final dateKey = DateTime(date.year, date.month, date.day);
+    return state.weatherData.valueOrNull?[dateKey];
+  }
+
+  List<PlannedOutfit> getOutfitsForWeek(DateTime weekStart) {
+    final outfits = state.plannedOutfits.valueOrNull ?? [];
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    return outfits.where((outfit) =>
+      outfit.date.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+      outfit.date.isBefore(weekEnd.add(const Duration(days: 1)))
+    ).toList();
+  }
+
+  bool hasOutfitForDate(DateTime date) {
+    return getOutfitForDate(date) != null;
+  }
+}
+
+// Additional providers for specific data
+@Riverpod(keepAlive: true)
+Future<PlannedOutfit?> plannedOutfitForDate(
+  PlannedOutfitForDateRef ref,
+  DateTime date,
+) async {
+  final repository = ref.watch(wardrobePlannerRepositoryProvider);
+  final result = await repository.getPlannedOutfitForDate(date);
+  return result.fold((failure) => null, (outfit) => outfit);
+}
+
+@Riverpod(keepAlive: true)
+Future<List<PlannedOutfit>> recentlyCompletedOutfits(
+  RecentlyCompletedOutfitsRef ref, {
+  int limit = 5,
+}) async {
+  final repository = ref.watch(wardrobePlannerRepositoryProvider);
+  final result = await repository.getRecentlyCompletedOutfits(limit: limit);
+  return result.fold((failure) => [], (outfits) => outfits);
 }

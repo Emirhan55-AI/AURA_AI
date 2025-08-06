@@ -86,6 +86,9 @@ dependencies:
   # Image Picker - Camera and Gallery
   image_picker: ^1.0.4
   
+  # Camera - Camera functionality
+  camera: ^0.10.5+9
+  
   # Image Cropper - Image Editing (temporarily disabled for web compatibility)
   # image_cropper: ^5.0.1
   
@@ -97,8 +100,13 @@ dependencies:
   device_calendar: ^4.3.2
   permission_handler: ^11.3.1
   
+  # Charts and Graphs
+  fl_chart: ^0.69.0
+  
   # WebSocket support for AI backend
   web_socket_channel: ^3.0.1
+  flutter_dotenv: ^5.2.1
+  hooks_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:
@@ -138,9 +146,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

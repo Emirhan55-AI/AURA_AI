@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../../../wardrobe/presentation/screens/wardrobe_home_screen.dart';
 import '../../../style_assistant/presentation/screens/style_assistant_screen.dart';
-import '../../../social/presentation/screens/social_feed_screen.dart';
+import '../../../messaging/presentation/screens/messaging_screen.dart';
+// Temporarily disabled social import
+// import '../../../social/presentation/screens/social_feed_screen.dart';
 import '../../../user_profile/presentation/screens/user_profile_screen.dart';
 
 /// App tab controller that provides the core navigation structure for the Aura app
@@ -48,7 +51,7 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
   /// Screen widgets for each main section
   static const List<Widget> _screenOptions = <Widget>[
     // Home Screen
-    HomeScreen(),
+    HomeScreen(key: Key('home_screen')),
     
     // Wardrobe Screen - Fully functional digital closet management
     WardrobeHomeScreen(),
@@ -56,8 +59,8 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
     // Style Assistant Screen - AI-powered styling chat interface
     StyleAssistantScreen(),
     
-    // Social Screen - Community feed and interactions
-    SocialFeedScreen(),
+    // Messaging Screen - Real-time messaging system
+    MessagingScreen(),
     
     // Profile Screen - User profile and settings
     UserProfileScreen(),
@@ -127,14 +130,8 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
         // Search button
         IconButton(
           onPressed: () {
-            // TODO: Implement search functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Search feature coming soon'),
-                backgroundColor: colorScheme.primary,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            // Navigate to search screen
+            context.push('/search');
           },
           icon: Icon(
             Icons.search_outlined,
@@ -148,14 +145,8 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
           children: [
             IconButton(
               onPressed: () {
-                // TODO: Implement notifications
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Notifications feature coming soon'),
-                    backgroundColor: colorScheme.primary,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                // Navigate to NotificationsScreen
+                context.push('/notifications');
               },
               icon: Icon(
                 Icons.notifications_outlined,
@@ -251,15 +242,15 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
           ),
           BottomNavigationBarItem(
             icon: Semantics(
-              label: 'Navigate to Social tab',
-              child: Icon(Icons.people_outline),
+              label: 'Navigate to Messaging tab',
+              child: Icon(Icons.chat_bubble_outline),
             ),
             activeIcon: Semantics(
-              label: 'Social tab selected',
-              child: Icon(Icons.people),
+              label: 'Messaging tab selected',
+              child: Icon(Icons.chat_bubble),
             ),
-            label: 'Social',
-            tooltip: 'Social & Community',
+            label: 'Messages',
+            tooltip: 'Messaging & Chat',
           ),
           BottomNavigationBarItem(
             icon: Semantics(

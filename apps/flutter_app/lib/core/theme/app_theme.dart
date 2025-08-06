@@ -277,4 +277,17 @@ class AppTheme {
       ),
     );
   }
+
+  // Static color accessors for compatibility
+  static Color get surface => AuraColors.warmWhite;
+  static Color get primary => AuraColors.warmCoral;
+  static Color get secondary => AuraColors.softPeach;
+  static Color get tertiary => AuraColors.warmTeal;
+  static Color get outline => AuraColors.warmGrey400;
+  static Color get onSurfaceVariant => AuraColors.warmGrey600;
+  static Color get surfaceVariant => AuraColors.warmGrey100;
+  static Color get primaryContainer => AuraColors.softPeach;
+  static Color get onPrimaryContainer => AuraColors.warmGrey800;
+  static Color get secondaryContainer => AuraColors.warmAmber;
+  static Color get onSecondaryContainer => AuraColors.warmGrey800;
 }

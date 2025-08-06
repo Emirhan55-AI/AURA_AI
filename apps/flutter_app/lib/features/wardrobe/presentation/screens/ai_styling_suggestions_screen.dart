@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/usecases/generate_styling_suggestions_use_case.dart';
-import '../providers/styling_suggestions_providers.dart';
+import '../providers/mock_styling_suggestions_providers.dart';
 
 /// Example screen demonstrating AI Styling Suggestions usage
 /// This shows how to integrate the AI styling feature into a real screen
@@ -21,7 +21,7 @@ class _AiStylingSuggestionsScreenState extends ConsumerState<AiStylingSuggestion
 
   @override
   Widget build(BuildContext context) {
-    final suggestionsState = ref.watch(suggestionsGenerationProvider);
+    final suggestionsState = ref.watch(mockSuggestionsGenerationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -289,6 +289,6 @@ class _AiStylingSuggestionsScreenState extends ConsumerState<AiStylingSuggestion
       maxSuggestions: 5, // Limit to 5 suggestions for demo
     );
 
-    ref.read(suggestionsGenerationProvider.notifier).generateSuggestions(params);
+    ref.read(mockSuggestionsGenerationProvider.notifier).generateSuggestions(params);
   }
 }

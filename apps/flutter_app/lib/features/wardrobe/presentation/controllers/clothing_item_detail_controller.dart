@@ -183,13 +183,29 @@ class ClothingItemDetailController extends _$ClothingItemDetailController {
       
       if (currentItem == null) return;
 
-      // TODO: Implement actual sharing logic (e.g., create share link, open share sheet)
-      // For now, this is a placeholder
+      // Create share content with item details
+      final shareText = '''
+Check out this ${currentItem.category ?? 'clothing item'}: ${currentItem.name}
+${currentItem.brand != null ? 'Brand: ${currentItem.brand}' : ''}
+${currentItem.color != null ? 'Color: ${currentItem.color}' : ''}
+${currentItem.size != null ? 'Size: ${currentItem.size}' : ''}
+
+Shared from Aura Wardrobe App
+''';
+
+      // Use platform's native share functionality
+      // This would typically use a share plugin like share_plus
+      // For now, we'll simulate the sharing action
       await Future<void>.delayed(const Duration(milliseconds: 300));
       
-      // Could show a success message through a callback or state update
+      // In a real implementation, you would use:
+      // await Share.share(shareText, subject: 'Check out my ${currentItem.name}');
+      
+      // Log the share action or show success feedback
+      print('Sharing item: ${currentItem.name}');
+      print('Share content: $shareText');
     } catch (e) {
-      // Handle sharing errors - could expose through state or callback
+      // Handle sharing errors silently or through a callback
     }
   }
 

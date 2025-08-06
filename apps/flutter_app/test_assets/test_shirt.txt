@@ -1,0 +1,13 @@
+# Test Image Data
+# Bu dosya test amaçlı clothing image simulation için kullanılacak
+# Gerçek testlerde kullanıcı galeri seçimi yapacak
+
+Test Image Properties:
+- Type: Casual T-Shirt
+- Color: Blue
+- Material: Cotton
+- Season: Summer
+- Category: Tops
+- Style: Casual, Comfortable
+
+# Bu veriler AI analiz sonuçlarını simüle etmek için kullanılabilir

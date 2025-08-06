@@ -26,11 +26,34 @@ abstract class AuthRepository {
   /// Returns [Left(Failure)] on error retrieving user
   Future<Either<Failure, User?>> getCurrentUser();
 
-  /// Registers a new user with email and password
+  /// Registers a new user with email, password and additional info
   /// 
   /// Returns [Right(User)] on successful registration
   /// Returns [Left(Failure)] on registration failure
-  Future<Either<Failure, User>> register(String email, String password);
+  Future<Either<Failure, User>> register({
+    required String email,
+    required String password,
+    required String fullName,
+    List<String>? stylePreferences,
+  });
+
+  /// Sends email verification code to user's email
+  /// 
+  /// Returns [Right(void)] on successful email sent
+  /// Returns [Left(Failure)] on failure to send email
+  Future<Either<Failure, void>> sendEmailVerification(String email);
+
+  /// Verifies email with the provided verification code
+  /// 
+  /// Returns [Right(void)] on successful verification
+  /// Returns [Left(Failure)] on verification failure
+  Future<Either<Failure, void>> verifyEmailCode(String email, String code);
+
+  /// Resends email verification code
+  /// 
+  /// Returns [Right(void)] on successful resend
+  /// Returns [Left(Failure)] on failure to resend
+  Future<Either<Failure, void>> resendEmailVerification(String email);
 
   /// Sends a password reset email to the provided email address
   /// 

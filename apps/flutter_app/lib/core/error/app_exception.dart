@@ -226,6 +226,40 @@ class MediaException extends AppException {
         );
 }
 
+/// Server-related errors (HTTP errors, server failures)
+class ServerException extends AppException {
+  const ServerException({
+    String? message,
+    String? code,
+    dynamic details,
+    Exception? originalException,
+  }) : super(
+          message ?? 'Server error occurred. Please try again later.',
+          code: code,
+          details: details,
+          originalException: originalException,
+        );
+
+  /// Named constructor for HTTP errors
+  const ServerException.httpError({
+    required int statusCode,
+    String? message,
+    String? code,
+  }) : super(
+          message ?? 'Server returned error $statusCode',
+          code: code,
+        );
+
+  /// Named constructor for server unavailable
+  const ServerException.unavailable({
+    String? message,
+    String? code,
+  }) : super(
+          message ?? 'Server is currently unavailable. Please try again later.',
+          code: code,
+        );
+}
+
 /// External service integration errors
 class ServiceException extends AppException {
   ServiceException({

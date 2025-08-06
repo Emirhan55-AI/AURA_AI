@@ -58,32 +58,62 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       // Start with minimum splash duration
       await Future.delayed(const Duration(milliseconds: 2000));
 
-      // TEMPORARY: Skip authentication for testing
-      // await ref.read(authControllerProvider.notifier).validateToken();
+      // Initialize and validate authentication token
+      await ref.read(authControllerProvider.notifier).validateToken();
+      
+      // Get authentication state
+      final authState = ref.read(authControllerProvider);
+      
+      // Check onboarding status
+      final preferencesService = ref.read(preferencesServiceProvider);
+      final hasSeenOnboarding = await preferencesService.getHasSeenOnboarding();
 
-      // Check app version and updates (temporarily disabled)
-      // final versionInfo = await ref.read(currentAppVersionProvider.future);
-      // final needsUpdate = await ref.read(appNeedsUpdateProvider.future);
+      if (!mounted) return;
 
-      // Log version information (for debugging)
-      debugPrint('App Version: 1.0.0 (1)');
-      debugPrint('Needs Update: false');
-
-      // Initialize preferences service if needed (temporarily disabled)
-      // final preferencesService = ref.read(preferencesServiceProvider);
-      // await preferencesService.getHasSeenOnboarding();
-
-      // TEMPORARY: Manual navigation to main screen
-      if (mounted) {
-        // Use GoRouter to navigate to main screen
-        context.go('/main');
-      }
+      // Determine navigation based on authentication and onboarding status
+      authState.when(
+        data: (user) {
+          if (user != null) {
+            // User is authenticated - go to main app
+            context.go('/main');
+          } else {
+            // User is not authenticated
+            if (hasSeenOnboarding) {
+              // Has seen onboarding - go to login
+              context.go('/auth/login');
+            } else {
+              // First time user - go to onboarding
+              context.go('/onboarding');
+            }
+          }
+        },
+        loading: () {
+          // Still loading - stay on splash screen
+          debugPrint('Authentication state still loading...');
+        },
+        error: (error, stack) {
+          debugPrint('Authentication error: $error');
+          // Error - treat as unauthenticated
+          if (hasSeenOnboarding) {
+            context.go('/auth/login');
+          } else {
+            context.go('/onboarding');
+          }
+        },
+      );
       
     } catch (error) {
       debugPrint('Splash screen initialization error: $error');
-      // Continue anyway - navigate to main screen
+      // Error fallback - go to onboarding
       if (mounted) {
-        context.go('/main');
+        final preferencesService = ref.read(preferencesServiceProvider);
+        final hasSeenOnboarding = await preferencesService.getHasSeenOnboarding();
+        
+        if (hasSeenOnboarding) {
+          context.go('/auth/login');
+        } else {
+          context.go('/onboarding');
+        }
       }
     }
   }

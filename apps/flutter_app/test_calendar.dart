@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'features/calendar/presentation/screens/calendar_screen.dart';
+import 'lib/features/calendar/presentation/screens/calendar_screen.dart';
 
 void main() {
   runApp(MyApp());

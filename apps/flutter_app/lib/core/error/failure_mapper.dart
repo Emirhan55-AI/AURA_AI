@@ -5,6 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'failure.dart';
 
+// Export for easy access from repositories
+export 'failure.dart';
+
 /// Utility class for converting exceptions to failures
 /// Provides consistent error mapping across the application
 class FailureMapper {

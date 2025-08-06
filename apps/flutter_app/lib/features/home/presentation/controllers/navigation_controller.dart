@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Simple StateProvider for tracking selected tab index
 final navigationStateProvider = StateProvider<int>((ref) => 0);
 
-/// Navigation controller for handling tab operations
+/// Enhanced Navigation controller for handling tab operations
 class NavigationController {
   final Ref ref;
   
@@ -22,6 +22,11 @@ class NavigationController {
     ref.read(navigationStateProvider.notifier).state = 0;
   }
 
+  /// Navigate to Dashboard tab (alias for resetToHome)
+  void goToDashboard() {
+    resetToHome();
+  }
+
   /// Navigate to wardrobe tab
   void goToWardrobe() {
     selectTab(1);
@@ -32,7 +37,12 @@ class NavigationController {
     selectTab(2);
   }
 
-  /// Navigate to inspire me tab
+  /// Navigate to social tab (renamed from inspire me)
+  void goToSocial() {
+    selectTab(3);
+  }
+
+  /// Navigate to inspire me tab (legacy alias for social)
   void goToInspireMe() {
     selectTab(3);
   }

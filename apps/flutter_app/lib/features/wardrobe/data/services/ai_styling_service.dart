@@ -209,7 +209,7 @@ class AiServiceException extends AppException {
     String? code,
     dynamic details,
   }) : super(
-          message: message,
+          message,
           code: code,
           details: details,
         );
