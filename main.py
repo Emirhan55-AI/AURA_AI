@@ -31,10 +31,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url_here":
     try:
-        # HATA DÜZELTMESİ: Render'daki proxy sorununu çözmek için options parametresi eklendi.
-        # Bu, kütüphanenin Render ortamındaki proxy ayarlarını görmezden gelmesini sağlar.
-        supabase_options = {"postgrest_client_options": {"proxies": None}}
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY, options=supabase_options)
+        # SON HATA DÜZELTMESİ: Render'daki proxy sorununu çözmek için doğru options yapısı.
+        # Bu, kütüphanenin içindeki httpx istemcisine proxy'leri görmezden gelmesini söyler.
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         print("✅ Supabase bağlantısı başarılı")
     except Exception as e:
         print(f"⚠️ Supabase bağlantı hatası: {e}")
@@ -58,7 +57,7 @@ class RecommendationRequest(BaseModel):
 app = FastAPI(
     title="Aura AI Backend",
     description="Kıyafet fotoğraflarını analiz eden ve kombin önerileri yapan yapay zeka servisi",
-    version="4.0.0"
+    version="5.0.0" # Son versiyon
 )
 
 
