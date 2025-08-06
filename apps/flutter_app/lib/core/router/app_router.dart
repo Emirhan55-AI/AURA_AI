@@ -43,8 +43,8 @@ import '../../features/search/presentation/screens/search_screen.dart';
 // import '../../features/social/presentation/screens/social_user_profile_screen.dart';
 // import '../../features/social/presentation/screens/create_post_screen.dart';
 
-// Import screens - User Profile
-import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
+// Import screens - User Profile 
+import '../../features/user_profile/presentation/screens/profile_screen_wrapper.dart';
 import '../../features/user_profile/presentation/screens/favorites_screen.dart';
 import '../../features/user_profile/presentation/screens/settings_screen.dart';
 import '../../features/user_profile/presentation/screens/privacy_policy_screen.dart';
@@ -120,12 +120,14 @@ List<RouteBase> _buildRoutes() {
           },
         ),
         GoRoute(
-          path: '/register',
-          name: 'register',
-          builder: (BuildContext context, GoRouterState state) {
-            return const RegisterScreen();
-          },
-        ),
+        // Wardrobe analytics route disabled
+        // GoRoute(
+        //   path: '/analytics',
+        //   name: 'wardrobeAnalytics',
+        //   builder: (BuildContext context, GoRouterState state) {
+        //     return const WardrobeAnalyticsScreen();
+        //   },
+        // },
         GoRoute(
           path: '/forgot-password',
           name: 'forgotPassword',
@@ -334,7 +336,7 @@ List<RouteBase> _buildRoutes() {
       path: '/profile',
       name: 'userProfile',
       builder: (BuildContext context, GoRouterState state) {
-        return const UserProfileScreen();
+        return const ProfileScreenWrapper(useHeroAnimation: true);
       },
       routes: [
         GoRoute(

@@ -23,6 +23,20 @@ class DashboardScreen extends ConsumerWidget {
     final homeAsyncValue = ref.watch(homeControllerProvider);
 
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push('/search'),
+            tooltip: 'Search',
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.push('/notifications'),
+            tooltip: 'Notifications',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {

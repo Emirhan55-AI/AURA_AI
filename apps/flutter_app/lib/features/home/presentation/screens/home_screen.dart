@@ -6,7 +6,8 @@ import 'dashboard_screen.dart';
 import '../controllers/navigation_controller.dart';
 import '../../../wardrobe/presentation/screens/wardrobe_home_screen.dart';
 import '../../../style_assistant/presentation/screens/style_assistant_screen.dart';
-import '../../../user_profile/presentation/screens/user_profile_screen.dart';
+import '../../../user_profile/presentation/screens/profile_screen_wrapper.dart';
+import '../../../social/presentation/screens/social_feed_screen.dart';
 
 /// Home Screen - Main navigation container with BottomNavigationBar
 /// Manages tab switching and displays appropriate content for each section
@@ -31,19 +32,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     StyleAssistantScreen(),
     
     // Social Feed Screen - Community social feed and interactions  
-    const Center(
-      child: Text(
-        'Social Feed\n(Coming Soon)',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 18,
-          color: Colors.grey,
-        ),
-      ),
-    ),
+    const SocialFeedScreen(),
     
     // Profile Screen - User profile and settings
-    UserProfileScreen(),
+    ProfileScreenWrapper(),
   ];
 
   @override
@@ -58,12 +50,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _handleBackButton(navigationController);
         }
       },
-      child: Scaffold(
-        body: IndexedStack(
-          index: selectedIndex,
-          children: _screenOptions,
-        ),
-        bottomNavigationBar: _buildBottomNavigationBar(context, selectedIndex, navigationController),
+      child: IndexedStack(
+        index: selectedIndex,
+        children: _screenOptions,
       ),
     );
   }
@@ -105,54 +94,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build bottom navigation bar
-  Widget _buildBottomNavigationBar(BuildContext context, int selectedIndex, NavigationController navigationController) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: selectedIndex,
-      onTap: (index) => navigationController.selectTab(index),
-      backgroundColor: colorScheme.surface,
-      selectedItemColor: colorScheme.primary,
-      unselectedItemColor: colorScheme.onSurface.withOpacity(0.6),
-      selectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-      unselectedLabelStyle: theme.textTheme.labelSmall,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_rounded),
-          activeIcon: Icon(Icons.home),
-          label: 'Home',
-          tooltip: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.checkroom_outlined),
-          activeIcon: Icon(Icons.checkroom),
-          label: 'Wardrobe',
-          tooltip: 'My Wardrobe',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.auto_awesome_outlined),
-          activeIcon: Icon(Icons.auto_awesome),
-          label: 'Style AI',
-          tooltip: 'Style Assistant',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.people_outline),
-          activeIcon: Icon(Icons.people),
-          label: 'Social',
-          tooltip: 'Social Feed',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
-          tooltip: 'User Profile',
-        ),
-      ],
-    );
-  }
 }

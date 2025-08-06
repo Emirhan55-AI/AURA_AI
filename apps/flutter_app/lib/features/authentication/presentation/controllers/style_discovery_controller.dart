@@ -397,28 +397,20 @@ class StyleDiscoveryController extends _$StyleDiscoveryController {
   }
 
   /// Answers a question and moves to next if applicable
-  void answerQuestion(String questionId, AnswerType type, dynamic value) {
-    final newAnswers = Map<String, StyleAnswer>.from(state.answers);
-    newAnswers[questionId] = StyleAnswer(
-      questionId: questionId,
-      type: type,
-      value: value,
-    );
-
-    state = state.copyWith(
-      answers: newAnswers,
-      errorMessage: null,
-    );
-  }
-
   /// Handles user answers and updates the state
-  void answerQuestion(String questionId, dynamic answer) {
-    final updatedAnswers = Map<String, dynamic>.from(state.answers)
-      ..[questionId] = answer;
+  void answerQuestion(String questionId, dynamic answer, {AnswerType? type}) {
+    final updatedAnswers = Map<String, StyleAnswer>.from(state.answers ?? {});
+    
+    updatedAnswers[questionId] = StyleAnswer(
+      questionId: questionId,
+      type: type ?? AnswerType.text,
+      value: answer,
+    );
 
     state = state.copyWith(
       answers: updatedAnswers,
       currentQuestionIndex: state.currentQuestionIndex + 1,
+      errorMessage: null,
     );
 
     if (state.currentQuestionIndex >= state.questions.length) {

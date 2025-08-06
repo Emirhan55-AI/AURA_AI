@@ -318,19 +318,11 @@ class CameraControllerNotifier extends StateNotifier<AsyncValue<CameraState>> {
     }
   }
 
-  /// Dispose camera controller
+  @override
   Future<void> dispose() async {
     final currentState = _currentState;
     if (currentState.cameraController != null) {
       await currentState.cameraController!.dispose();
-    }
-  }
-
-  @override
-  void dispose() {
-    final currentState = _currentState;
-    if (currentState.cameraController != null) {
-      currentState.cameraController!.dispose();
     }
     super.dispose();
   }

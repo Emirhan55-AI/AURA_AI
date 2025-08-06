@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/ui/system_state_widget.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/aura_score_display.dart';
@@ -96,8 +97,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       actions: [
         IconButton(
           onPressed: () {
-            // Navigate to settings using controller
-            ref.read(userProfileControllerProvider.notifier).navigateToSettings();
+            // Navigate to settings
+            context.push('/profile/settings');
           },
           icon: Icon(
             Icons.settings_outlined,

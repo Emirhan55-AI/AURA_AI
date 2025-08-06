@@ -26,17 +26,10 @@ class WardrobeController extends _$WardrobeController {
 
   @override
   Future<List<ClothingItem>> build() async {
-    final wardrobeRepository = ref.read(wardrobeRepositoryProvider);
-
-    // Apply filters and search term
-    final result = await wardrobeRepository.getClothingItems();
-
-    return result.fold(
-      (Failure failure) {
-        throw Exception('Failed to load clothing items: ${failure.message}');
-      },
-      (List<ClothingItem> items) => items,
-    );
+    // Use mock data for demo
+    final items = _getMockClothingItems();
+    ref.invalidate(wardrobeStatsProvider); // Refresh stats
+    return items;
   }
 
   /// Mock data for testing wardrobe functionality
@@ -53,7 +46,7 @@ class WardrobeController extends _$WardrobeController {
         isFavorite: true,
         createdAt: DateTime.now().subtract(const Duration(days: 10)),
         updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-        imageUrl: 'https://picsum.photos/300/400?random=1',
+        imageUrl: 'https://i.imgur.com/pZ9jX8v.jpeg',
       ),
       ClothingItem(
         id: '2',
@@ -66,7 +59,7 @@ class WardrobeController extends _$WardrobeController {
         isFavorite: false,
         createdAt: DateTime.now().subtract(const Duration(days: 8)),
         updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-        imageUrl: 'https://picsum.photos/300/400?random=2',
+        imageUrl: 'https://i.imgur.com/X0qGHm9.jpeg',
       ),
       ClothingItem(
         id: '3',

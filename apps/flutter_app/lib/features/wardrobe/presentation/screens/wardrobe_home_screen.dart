@@ -31,9 +31,9 @@ class _WardrobeHomeScreenState extends ConsumerState<WardrobeHomeScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(wardrobeControllerProvider.notifier).loadItems(isRefresh: true);
-    });
+    // No need to load items explicitly for demo
+    _fadeController.forward();
+    _slideController.forward();
   }
 
   void _setupAnimations() {

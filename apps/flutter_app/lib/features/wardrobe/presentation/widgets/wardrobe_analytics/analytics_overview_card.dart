@@ -1,43 +1,4 @@
-import 'package:flutter/material.dart';
-import '../../../../../../core/theme/app_theme.dart';
-import '../../../../../../core/utils/extensions/context_extensions.dart';
-import '../../../domain/models/wardrobe_analytics.dart';
-
-class AnalyticsOverviewCard extends StatelessWidget {
-  final WardrobeAnalytics analytics;
-  final VoidCallback? onViewDetails;
-
-  const AnalyticsOverviewCard({
-    super.key,
-    required this.analytics,
-    this.onViewDetails,
-  });
-
-  const AnalyticsOverviewCard.loading({
-    super.key,
-  }) : analytics = const WardrobeAnalytics(
-          userId: '',
-          period: AnalyticsPeriod.month,
-          generatedAt: '',
-          usageStats: WardrobeUsageStats(
-            totalItemsWorn: 0,
-            averageDailyUsage: 0,
-            peakUsageDay: '',
-            mostWornCategory: '',
-            leastWornCategory: '',
-          ),
-          categoryStats: {},
-          colorAnalysis: {},
-          outfitFrequency: [],
-          itemFrequency: [],
-        ),
-        onViewDetails = null;
-
-  AnalyticsOverviewCard.error(String error, {super.key})
-      : analytics = const WardrobeAnalytics(
-          userId: '',
-          period: AnalyticsPeriod.month,
-          generatedAt: '',
+// WARDROBE ANALYTICS WIDGET DISABLED
           usageStats: WardrobeUsageStats(
             totalItemsWorn: 0,
             averageDailyUsage: 0,

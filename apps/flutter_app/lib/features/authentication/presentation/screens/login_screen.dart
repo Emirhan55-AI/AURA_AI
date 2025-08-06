@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
+import '../../../../features/home/presentation/screens/app_tab_controller.dart';
 
 /// Login screen for existing users to authenticate with their credentials
 /// Implements Material 3 design with Aura's warm theme and accessibility features
@@ -112,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _performLogin(String email, String password) async {
     // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
 
     // Simulate potential authentication scenarios
     if (password == 'wrong') {
@@ -123,23 +124,29 @@ class _LoginScreenState extends State<LoginScreen>
       throw Exception('Your account has been temporarily blocked. Please contact support.');
     }
     
-    // Simulate random network error (5% chance)
-    if (DateTime.now().millisecond % 20 == 0) {
-      throw Exception('Connection error. Please check your internet and try again.');
-    }
-
     // Success - navigate to home
     if (mounted) {
-      context.go('/home');
+      // Navigate to home screen directly
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (context) => const AppTabController(),
+        ),
+      );
     }
   }
 
   void _onForgotPassword() {
-    context.push('/forgot-password');
+    // For now, just show a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Forgot password functionality coming soon')),
+    );
   }
 
   void _onSignUp() {
-    context.go('/onboarding');
+    // For now, just show a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sign up functionality coming soon')),
+    );
   }
 
   @override

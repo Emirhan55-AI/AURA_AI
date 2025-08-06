@@ -218,8 +218,8 @@ class _StyleDiscoveryScreenState extends ConsumerState<StyleDiscoveryScreen>
           onAnswer: (List<String> selectedOptions) {
             ref.read(styleDiscoveryControllerProvider.notifier).answerQuestion(
               question.id,
-              AnswerType.list,
               selectedOptions,
+              type: AnswerType.list,
             );
           },
         );
@@ -635,9 +635,9 @@ class _StyleDiscoveryScreenState extends ConsumerState<StyleDiscoveryScreen>
   /// Handles answering a question
   void _handleAnswer(String questionId, AnswerType type, dynamic value) {
     ref.read(styleDiscoveryControllerProvider.notifier).answerQuestion(
-      questionId, 
-      type, 
+      questionId,
       value,
+      type: type,
     );
     
     // Auto-advance for single-choice questions

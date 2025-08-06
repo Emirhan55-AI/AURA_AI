@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/app_version_service.dart';
-import '../../../../core/services/preferences_service.dart';
 import '../../../authentication/presentation/controllers/auth_controller.dart';
 
 /// Splash screen that handles app initialization
@@ -56,35 +55,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _initializeApp() async {
     try {
       // Start with minimum splash duration
-      await Future.delayed(const Duration(milliseconds: 2000));
+      await Future<void>.delayed(const Duration(milliseconds: 2000));
 
       // Initialize and validate authentication token
       await ref.read(authControllerProvider.notifier).validateToken();
       
       // Get authentication state
       final authState = ref.read(authControllerProvider);
-      
-      // Check onboarding status
-      final preferencesService = ref.read(preferencesServiceProvider);
-      final hasSeenOnboarding = await preferencesService.getHasSeenOnboarding();
 
       if (!mounted) return;
 
-      // Determine navigation based on authentication and onboarding status
+      // Temporary: Skip onboarding and go directly to login screen
       authState.when(
         data: (user) {
           if (user != null) {
             // User is authenticated - go to main app
             context.go('/main');
           } else {
-            // User is not authenticated
-            if (hasSeenOnboarding) {
-              // Has seen onboarding - go to login
-              context.go('/auth/login');
-            } else {
-              // First time user - go to onboarding
-              context.go('/onboarding');
-            }
+            // User is not authenticated - go directly to login
+            context.go('/auth/login');
           }
         },
         loading: () {
@@ -93,27 +82,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         },
         error: (error, stack) {
           debugPrint('Authentication error: $error');
-          // Error - treat as unauthenticated
-          if (hasSeenOnboarding) {
-            context.go('/auth/login');
-          } else {
-            context.go('/onboarding');
-          }
+          // Error - treat as unauthenticated and go to login
+          context.go('/auth/login');
         },
       );
       
     } catch (error) {
       debugPrint('Splash screen initialization error: $error');
-      // Error fallback - go to onboarding
       if (mounted) {
-        final preferencesService = ref.read(preferencesServiceProvider);
-        final hasSeenOnboarding = await preferencesService.getHasSeenOnboarding();
-        
-        if (hasSeenOnboarding) {
-          context.go('/auth/login');
-        } else {
-          context.go('/onboarding');
-        }
+        // Any error - go directly to login screen
+        context.go('/auth/login');
       }
     }
   }
@@ -231,9 +209,8 @@ final splashInitializationProvider = FutureProvider<SplashInitResult>((ref) asyn
     // Check for updates
     final needsUpdate = await ref.read(appNeedsUpdateProvider.future);
     
-    // Check onboarding status
-    final preferencesService = ref.read(preferencesServiceProvider);
-    final hasSeenOnboarding = await preferencesService.getHasSeenOnboarding();
+    // Temporary: Skip onboarding status check
+    const hasSeenOnboarding = true; // Force skip onboarding
     
     return SplashInitResult(
       versionInfo: versionInfo,

@@ -5,9 +5,8 @@ import '../screens/home_screen.dart';
 import '../../../wardrobe/presentation/screens/wardrobe_home_screen.dart';
 import '../../../style_assistant/presentation/screens/style_assistant_screen.dart';
 import '../../../messaging/presentation/screens/messaging_screen.dart';
-// Temporarily disabled social import
-// import '../../../social/presentation/screens/social_feed_screen.dart';
-import '../../../user_profile/presentation/screens/user_profile_screen.dart';
+import '../../../social/presentation/screens/social_feed_screen.dart';
+import '../../../user_profile/presentation/screens/profile_screen_wrapper.dart';
 
 /// App tab controller that provides the core navigation structure for the Aura app
 /// Features a bottom navigation bar with 5 main sections and consistent app bar
@@ -59,11 +58,14 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
     // Style Assistant Screen - AI-powered styling chat interface
     StyleAssistantScreen(),
     
+    // Social Feed Screen - Community feed and interactions
+    SocialFeedScreen(),
+    
     // Messaging Screen - Real-time messaging system
     MessagingScreen(),
     
     // Profile Screen - User profile and settings
-    UserProfileScreen(),
+    ProfileScreenWrapper(),
   ];
 
   void _onItemTapped(int index) {
@@ -239,6 +241,18 @@ class _AppTabControllerState extends ConsumerState<AppTabController>
             ),
             label: 'Style',
             tooltip: 'Style Assistant',
+          ),
+          BottomNavigationBarItem(
+            icon: Semantics(
+              label: 'Navigate to Social Feed tab',
+              child: Icon(Icons.people_outline),
+            ),
+            activeIcon: Semantics(
+              label: 'Social Feed tab selected',
+              child: Icon(Icons.people),
+            ),
+            label: 'Social',
+            tooltip: 'Social Feed',
           ),
           BottomNavigationBarItem(
             icon: Semantics(

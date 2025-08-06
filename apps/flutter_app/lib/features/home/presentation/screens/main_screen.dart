@@ -15,13 +15,17 @@ class MainScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch authentication state
     final authState = ref.watch(authControllerProvider);
     
     return authState.when(
       loading: () => const SplashScreen(),
-      error: (error, stackTrace) {
-        // On authentication error, check onboarding status
+      error: (_, __) => const LoginScreen(),
+      data: (user) {
+        if (user != null) {
+          return const AppTabController();
+        }
+        
+        // User not authenticated - check onboarding status
         return FutureBuilder<bool>(
           future: ref.read(preferencesServiceProvider).getHasSeenOnboarding(),
           builder: (context, snapshot) {
@@ -35,27 +39,6 @@ class MainScreen extends ConsumerWidget {
                 : const OnboardingScreen();
           },
         );
-      },
-      data: (user) {
-        if (user != null) {
-          // User is authenticated - show main app
-          return const AppTabController();
-        } else {
-          // User is not authenticated - check onboarding status
-          return FutureBuilder<bool>(
-            future: ref.read(preferencesServiceProvider).getHasSeenOnboarding(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SplashScreen();
-              }
-              
-              final hasSeenOnboarding = snapshot.data ?? false;
-              return hasSeenOnboarding 
-                  ? const LoginScreen() 
-                  : const OnboardingScreen();
-            },
-          );
-        }
       },
     );
   }

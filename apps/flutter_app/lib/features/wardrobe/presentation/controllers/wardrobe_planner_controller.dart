@@ -240,9 +240,11 @@ class WardrobePlannerController extends _$WardrobePlannerController {
 
   /// Loads initial data for the screen
   Future<void> loadInitialData() async {
+    final today = DateTime.now();
+    final next7Days = List<DateTime>.generate(7, (i) => today.add(Duration(days: i)));
     await Future.wait([
       loadPlannedOutfits(),
-      loadWeatherData(),
+      loadWeatherData(next7Days),
       loadAvailableOutfits(),
       loadPlanningStats(),
     ]);
@@ -310,6 +312,7 @@ class WardrobePlannerController extends _$WardrobePlannerController {
           outfitName: outfit.name,
           clothingItemIds: outfit.clothingItemIds,
           createdAt: DateTime.now(),
+          tags: const [],
         );
         
         state = state.copyWith(
@@ -340,7 +343,7 @@ class WardrobePlannerController extends _$WardrobePlannerController {
       final outfitForPlan = Outfit(
         id: plan.outfitId,
         userId: 'user1', // TODO: Get from auth
-        name: plan.outfitName ?? 'Untitled Outfit',
+        name: plan.outfitName,
         clothingItemIds: plan.clothingItemIds,
         createdAt: plan.createdAt,
         updatedAt: plan.createdAt,
@@ -469,6 +472,7 @@ class WardrobePlannerController extends _$WardrobePlannerController {
       outfitName: outfit.name,
       clothingItemIds: outfit.clothingItemIds,
       createdAt: DateTime.now(),
+      tags: const [],
     );
 
     final result = await repository.createPlannedOutfit(newPlan);

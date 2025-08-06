@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../controllers/style_discovery_controller.dart';
+import '../../../../controllers/style_discovery_controller.dart';
 
 /// TinderCard - Swipeable card interface for style preferences
 /// 
@@ -8,7 +8,7 @@ import '../../../controllers/style_discovery_controller.dart';
 class TinderCard extends StatefulWidget {
   final StyleQuestion question;
   final StyleAnswer? currentAnswer;
-  final Function(List<String>) onAnswer;
+  final void Function(List<String>) onAnswer;
 
   const TinderCard({
     super.key,
@@ -22,10 +22,9 @@ class TinderCard extends StatefulWidget {
 }
 
 class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
-  late AnimationController _cardController;
-  late AnimationController _overlayController;
-  late Animation<double> _cardAnimation;
-  late Animation<double> _overlayAnimation;
+  late final AnimationController _cardController;
+  late final AnimationController _overlayController;
+  late final Animation<double> _overlayAnimation;
   
   int _currentOptionIndex = 0;
   final List<String> _likedOptions = [];
@@ -46,14 +45,6 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
       vsync: this,
     );
     
-    _cardAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _cardController,
-      curve: Curves.easeInOut,
-    ));
-    
     _overlayAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -63,8 +54,10 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
     ));
 
     // Initialize from current answer if exists
-    if (widget.currentAnswer?.listValue != null) {
-      _likedOptions.addAll(widget.currentAnswer!.listValue!);
+    if (widget.currentAnswer?.type == AnswerType.list && widget.currentAnswer?.value != null) {
+      if (widget.currentAnswer!.value is List) {
+        _likedOptions.addAll((widget.currentAnswer!.value as List).map((e) => e.toString()));
+      }
     }
   }
 
@@ -80,7 +73,8 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
-    if (_currentOptionIndex >= widget.question.options.length) {
+    final options = widget.question.options ?? <String>[];
+    if (_currentOptionIndex >= options.length) {
       return _buildCompletionCard(theme, colorScheme);
     }
 
@@ -143,7 +137,7 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
       children: [
         // Background cards (next options preview)
         for (int i = _currentOptionIndex + 1; 
-             i < _currentOptionIndex + 3 && i < widget.question.options.length; 
+             i < _currentOptionIndex + 3 && i < (widget.question.options?.length ?? 0); 
              i++)
           _buildBackgroundCard(i, theme, colorScheme),
         
@@ -179,7 +173,8 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
   }
 
   Widget _buildCurrentCard(ThemeData theme, ColorScheme colorScheme) {
-    final currentOption = widget.question.options[_currentOptionIndex];
+    if (widget.question.options == null) return _buildCompletionCard(theme, colorScheme);
+    final currentOption = widget.question.options![_currentOptionIndex];
     
     return GestureDetector(
       onPanUpdate: (details) {
@@ -351,7 +346,7 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
   }
 
   Widget _buildProgressIndicator(ThemeData theme, ColorScheme colorScheme) {
-    final progress = (_currentOptionIndex + 1) / widget.question.options.length;
+    final progress = (_currentOptionIndex + 1) / (widget.question.options?.length ?? 1);
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -367,7 +362,7 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
                 ),
               ),
               Text(
-                '${widget.question.options.length}',
+                '${widget.question.options?.length ?? 0}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -433,9 +428,10 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
 
   void _likeCurrentOption() {
     if (_isAnimating) return;
+    if (widget.question.options == null) return;
     
     _isAnimating = true;
-    final currentOption = widget.question.options[_currentOptionIndex];
+    final currentOption = widget.question.options![_currentOptionIndex];
     
     setState(() {
       _likedOptions.add(currentOption);
@@ -448,9 +444,10 @@ class _TinderCardState extends State<TinderCard> with TickerProviderStateMixin {
 
   void _dislikeCurrentOption() {
     if (_isAnimating) return;
+    if (widget.question.options == null) return;
     
     _isAnimating = true;
-    final currentOption = widget.question.options[_currentOptionIndex];
+    final currentOption = widget.question.options![_currentOptionIndex];
     
     setState(() {
       _dislikedOptions.add(currentOption);

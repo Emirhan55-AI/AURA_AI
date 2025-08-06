@@ -1,43 +1,4 @@
-import 'package:flutter/material.dart';
-import '../../../../../../core/theme/app_theme.dart';
-import '../../../../../../core/utils/extensions/context_extensions.dart';
-import '../../../domain/models/wardrobe_analytics.dart';
-
-class AnalyticsHeader extends StatelessWidget {
-  final AnalyticsPeriod selectedPeriod;
-  final Function(AnalyticsPeriod) onPeriodChanged;
-  final bool isLoading;
-
-  const AnalyticsHeader({
-    super.key,
-    required this.selectedPeriod,
-    required this.onPeriodChanged,
-    this.isLoading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Analytics Period',
-                style: context.textTheme.titleMedium?.copyWith(
+// WARDROBE ANALYTICS WIDGET DISABLED
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -1,4 +1,117 @@
+/// Color usage analysis
+class ColorAnalysis {
+  final String colorName;
+  final Color color;
+  final int itemCount;
+  final int timesWorn;
+/// Color usage analysis
+// WARDROBE ANALYTICS DOMAIN MODEL DISABLED
+// class ColorAnalysis {
+//   final String colorName;
+//   final Color color;
+//   final int itemCount;
+//   final int timesWorn;
+//   final double percentage;
+//   final bool isTrending;
+//   final List<String> categories;
+//
+//   const ColorAnalysis({
+//     required this.colorName,
+//     required this.color,
+//     required this.itemCount,
+//     required this.timesWorn,
+//     required this.percentage,
+//     required this.isTrending,
+//     required this.categories,
+//   });
+// }
+
+/// Outfit frequency tracking
+// class OutfitFrequency {
+//   final String outfitId;
+//   final String outfitName;
+//   final List<String> itemIds;
+//   final int timesWorn;
+//   final DateTime lastWorn;
+//   final String? imageUrl;
+//   final List<String> occasions;
+//   final double rating;
+//
+//   const OutfitFrequency({
+//     required this.outfitId,
+//     required this.outfitName,
+//     required this.itemIds,
+//     required this.timesWorn,
+//     required this.lastWorn,
+//     this.imageUrl,
+//     required this.occasions,
+//     required this.rating,
+//   });
+// }
+  final List<String> emergingStyles;
+  final List<String> decliningStyles;
+  final Map<String, double> stylePreferences;
+  final List<String> seasonalTrends;
+  final String dominantStyle;
+  final double styleConsistency;
+
+  const StyleTrends({
+    required this.emergingStyles,
+    required this.decliningStyles,
+    required this.stylePreferences,
+    required this.seasonalTrends,
+    required this.dominantStyle,
+    required this.styleConsistency,
+  });
+}
+
+/// Wardrobe recommendations based on analytics
+// class WardrobeRecommendation {
+//   final String id;
+//   final RecommendationType type;
+//   final String title;
+//   final String description;
+//   final String actionText;
+//   final IconData icon;
+//   final Color color;
+//   final int priority;
+//   final List<String> relatedItemIds;
+//   final Map<String, dynamic>? metadata;
+//
+//   const WardrobeRecommendation({
+//     required this.id,
+//     required this.type,
+//     required this.title,
+//     required this.description,
+//     required this.actionText,
+//     required this.icon,
+//     required this.color,
+//     required this.priority,
+//     required this.relatedItemIds,
+//     this.metadata,
+//   });
+// }
+/// Priority levels for recommendations
 import 'package:flutter/material.dart';
+
+/// Priority levels for recommendations
+enum RecommendationPriority {
+  high,
+  medium,
+  low,
+}
+
+/// Types of wardrobe recommendations
+enum RecommendationType {
+  addItem,
+  removeItem,
+  tryOutfit,
+  createOutfit,
+  sustainability,
+  budget,
+  organization,
+  style,
+}
 
 /// Enum for different analytics time periods
 enum AnalyticsPeriod {
@@ -81,129 +194,69 @@ extension AnalyticsPeriodExtension on AnalyticsPeriod {
   }
 }
 
-/// Data model for wardrobe usage analytics
-class WardrobeAnalytics {
-  final String id;
-  final String userId;
-  final AnalyticsPeriod period;
-  final DateTime startDate;
-  final DateTime endDate;
-  final WardrobeUsageStats usageStats;
-  final List<CategoryStats> categoryStats;
-  final List<ColorAnalysis> colorAnalysis;
-  final List<OutfitFrequency> mostWornOutfits;
-  final List<ItemFrequency> mostWornItems;
-  final List<ItemFrequency> leastWornItems;
-  final SustainabilityMetrics sustainabilityMetrics;
-  final StyleTrends styleTrends;
-  final List<WardrobeRecommendation> recommendations;
-  final DateTime generatedAt;
-
-  const WardrobeAnalytics({
-    required this.id,
-    required this.userId,
-    required this.period,
-    required this.startDate,
-    required this.endDate,
-    required this.usageStats,
-    required this.categoryStats,
-    required this.colorAnalysis,
-    required this.mostWornOutfits,
-    required this.mostWornItems,
-    required this.leastWornItems,
-    required this.sustainabilityMetrics,
-    required this.styleTrends,
-    required this.recommendations,
-    required this.generatedAt,
-  });
-
-  WardrobeAnalytics copyWith({
-    String? id,
-    String? userId,
-    AnalyticsPeriod? period,
-    DateTime? startDate,
-    DateTime? endDate,
-    WardrobeUsageStats? usageStats,
-    List<CategoryStats>? categoryStats,
-    List<ColorAnalysis>? colorAnalysis,
-    List<OutfitFrequency>? mostWornOutfits,
-    List<ItemFrequency>? mostWornItems,
-    List<ItemFrequency>? leastWornItems,
-    SustainabilityMetrics? sustainabilityMetrics,
-    StyleTrends? styleTrends,
-    List<WardrobeRecommendation>? recommendations,
-    DateTime? generatedAt,
-  }) {
-    return WardrobeAnalytics(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      period: period ?? this.period,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      usageStats: usageStats ?? this.usageStats,
-      categoryStats: categoryStats ?? this.categoryStats,
-      colorAnalysis: colorAnalysis ?? this.colorAnalysis,
-      mostWornOutfits: mostWornOutfits ?? this.mostWornOutfits,
-      mostWornItems: mostWornItems ?? this.mostWornItems,
-      leastWornItems: leastWornItems ?? this.leastWornItems,
-      sustainabilityMetrics: sustainabilityMetrics ?? this.sustainabilityMetrics,
-      styleTrends: styleTrends ?? this.styleTrends,
-      recommendations: recommendations ?? this.recommendations,
-      generatedAt: generatedAt ?? this.generatedAt,
-    );
+/// Extension for RecommendationType functionality
+extension RecommendationTypeExtension on RecommendationType {
+  String get displayName {
+    switch (this) {
+      case RecommendationType.addItem:
+        return 'Add Item';
+      case RecommendationType.removeItem:
+        return 'Remove Item';
+      case RecommendationType.tryOutfit:
+        return 'Try Outfit';
+      case RecommendationType.createOutfit:
+        return 'Create Outfit';
+      case RecommendationType.sustainability:
+        return 'Sustainability';
+      case RecommendationType.budget:
+        return 'Budget';
+      case RecommendationType.organization:
+        return 'Organization';
+      case RecommendationType.style:
+        return 'Style';
+    }
   }
-}
 
-/// Overall wardrobe usage statistics
-class WardrobeUsageStats {
-  final int totalItems;
-  final int wornItems;
-  final int unwornItems;
-  final double usagePercentage;
-  final int totalOutfits;
-  final int uniqueOutfitsWorn;
-  final int averageWearPerItem;
-  final double costPerWear;
-  final int newItemsAdded;
-  final int itemsRemoved;
+  IconData get defaultIcon {
+    switch (this) {
+      case RecommendationType.addItem:
+        return Icons.add_shopping_cart;
+      case RecommendationType.removeItem:
+        return Icons.remove_circle_outline;
+      case RecommendationType.tryOutfit:
+        return Icons.style;
+      case RecommendationType.createOutfit:
+        return Icons.palette;
+      case RecommendationType.sustainability:
+        return Icons.eco;
+      case RecommendationType.budget:
+        return Icons.savings;
+      case RecommendationType.organization:
+        return Icons.folder_open;
+      case RecommendationType.style:
+        return Icons.auto_awesome;
+    }
+  }
 
-  const WardrobeUsageStats({
-    required this.totalItems,
-    required this.wornItems,
-    required this.unwornItems,
-    required this.usagePercentage,
-    required this.totalOutfits,
-    required this.uniqueOutfitsWorn,
-    required this.averageWearPerItem,
-    required this.costPerWear,
-    required this.newItemsAdded,
-    required this.itemsRemoved,
-  });
-
-  WardrobeUsageStats copyWith({
-    int? totalItems,
-    int? wornItems,
-    int? unwornItems,
-    double? usagePercentage,
-    int? totalOutfits,
-    int? uniqueOutfitsWorn,
-    int? averageWearPerItem,
-    double? costPerWear,
-    int? newItemsAdded,
-    int? itemsRemoved,
-  }) {
-    return WardrobeUsageStats(
-      totalItems: totalItems ?? this.totalItems,
-      wornItems: wornItems ?? this.wornItems,
-      unwornItems: unwornItems ?? this.unwornItems,
-      usagePercentage: usagePercentage ?? this.usagePercentage,
-      totalOutfits: totalOutfits ?? this.totalOutfits,
-      uniqueOutfitsWorn: uniqueOutfitsWorn ?? this.uniqueOutfitsWorn,
-      averageWearPerItem: averageWearPerItem ?? this.averageWearPerItem,
-      costPerWear: costPerWear ?? this.costPerWear,
-      newItemsAdded: newItemsAdded ?? this.newItemsAdded,
-      itemsRemoved: itemsRemoved ?? this.itemsRemoved,
-    );
+  Color get defaultColor {
+    switch (this) {
+      case RecommendationType.addItem:
+        return Colors.green;
+      case RecommendationType.removeItem:
+        return Colors.red;
+      case RecommendationType.tryOutfit:
+        return Colors.purple;
+      case RecommendationType.createOutfit:
+        return Colors.blue;
+      case RecommendationType.sustainability:
+        return Colors.teal;
+      case RecommendationType.budget:
+        return Colors.orange;
+      case RecommendationType.organization:
+        return Colors.indigo;
+      case RecommendationType.style:
+        return Colors.pink;
+    }
   }
 }
 
@@ -271,27 +324,133 @@ class ColorAnalysis {
     required this.isTrending,
     required this.categories,
   });
+}
 
-  ColorAnalysis copyWith({
-    String? colorName,
-    Color? color,
-    int? itemCount,
+/// Outfit frequency tracking
+class OutfitFrequency {
+  final String outfitId;
+  final String outfitName;
+  final List<String> itemIds;
+  final int timesWorn;
+  final DateTime lastWorn;
+  final String? imageUrl;
+  final List<String> occasions;
+  final double rating;
+
+  const OutfitFrequency({
+    required this.outfitId,
+    required this.outfitName,
+    required this.itemIds,
+    required this.timesWorn,
+    required this.lastWorn,
+    this.imageUrl,
+    required this.occasions,
+    required this.rating,
+  });
+}
+
+
+/// Overall wardrobe usage statistics
+class WardrobeUsageStats {
+  final int totalItems;
+  final int wornItems;
+  final int unwornItems;
+  final double usagePercentage;
+  final int totalOutfits;
+  final int uniqueOutfitsWorn;
+  final int averageWearPerItem;
+  final double costPerWear;
+  final int newItemsAdded;
+  final int itemsRemoved;
+  final int totalItemsWorn;
+  final double averageDailyUsage;
+  final String mostWornCategory;
+  const WardrobeUsageStats({
+    required this.totalItems,
+    required this.wornItems,
+    required this.unwornItems,
+    required this.usagePercentage,
+    required this.totalOutfits,
+    required this.uniqueOutfitsWorn,
+    required this.averageWearPerItem,
+    required this.costPerWear,
+    required this.newItemsAdded,
+    required this.itemsRemoved,
+    this.totalItemsWorn = 0,
+    this.averageDailyUsage = 0.0,
+    this.mostWornCategory = '',
+  });
+
+// All class, enum, and extension definitions below are at top-level and not nested inside any other class or function.
+
+/// Statistics for clothing categories
+class CategoryStats {
+  final String category;
+  final int totalItems;
+  final int wornItems;
+  final double usageRate;
+  final double totalSpent;
+  final double costPerWear;
+  final int timesWorn;
+  final Color displayColor;
+
+  const CategoryStats({
+    required this.category,
+    required this.totalItems,
+    required this.wornItems,
+    required this.usageRate,
+    required this.totalSpent,
+    required this.costPerWear,
+    required this.timesWorn,
+    required this.displayColor,
+  });
+
+
+  CategoryStats copyWith({
+    String? category,
+    int? totalItems,
+    int? wornItems,
+    double? usageRate,
+    double? totalSpent,
+    double? costPerWear,
     int? timesWorn,
-    double? percentage,
-    bool? isTrending,
-    List<String>? categories,
+    Color? displayColor,
   }) {
-    return ColorAnalysis(
-      colorName: colorName ?? this.colorName,
-      color: color ?? this.color,
-      itemCount: itemCount ?? this.itemCount,
+    return CategoryStats(
+      category: category ?? this.category,
+      totalItems: totalItems ?? this.totalItems,
+      wornItems: wornItems ?? this.wornItems,
+      usageRate: usageRate ?? this.usageRate,
+      totalSpent: totalSpent ?? this.totalSpent,
+      costPerWear: costPerWear ?? this.costPerWear,
       timesWorn: timesWorn ?? this.timesWorn,
-      percentage: percentage ?? this.percentage,
-      isTrending: isTrending ?? this.isTrending,
-      categories: categories ?? this.categories,
+      displayColor: displayColor ?? this.displayColor,
     );
   }
 }
+
+/// Color usage analysis
+class ColorAnalysis {
+  final String colorName;
+        this.totalItemsWorn = 0, // Added missing field
+        this.averageDailyUsage = 0.0, // Added missing field
+        this.mostWornCategory = '', // Added missing field
+  final Color color;
+  final int itemCount;
+  final int timesWorn;
+  final double percentage;
+  final bool isTrending;
+  final List<String> categories;
+
+  const ColorAnalysis({
+    required this.colorName,
+    required this.color,
+    required this.itemCount,
+    required this.timesWorn,
+    required this.percentage,
+    required this.isTrending,
+    required this.categories,
+  });
 
 /// Outfit frequency tracking
 class OutfitFrequency {
@@ -342,7 +501,8 @@ class OutfitFrequency {
 class ItemFrequency {
   final String itemId;
   final String itemName;
-  final String category;
+  final RecommendationType type;
+  final RecommendationPriority priority;
   final int timesWorn;
   final DateTime lastWorn;
   final String? imageUrl;
@@ -352,35 +512,14 @@ class ItemFrequency {
   const ItemFrequency({
     required this.itemId,
     required this.itemName,
-    required this.category,
+    required this.type,
+    required this.priority,
     required this.timesWorn,
     required this.lastWorn,
     this.imageUrl,
     required this.costPerWear,
     required this.versatilityScore,
   });
-
-  ItemFrequency copyWith({
-    String? itemId,
-    String? itemName,
-    String? category,
-    int? timesWorn,
-    DateTime? lastWorn,
-    String? imageUrl,
-    double? costPerWear,
-    double? versatilityScore,
-  }) {
-    return ItemFrequency(
-      itemId: itemId ?? this.itemId,
-      itemName: itemName ?? this.itemName,
-      category: category ?? this.category,
-      timesWorn: timesWorn ?? this.timesWorn,
-      lastWorn: lastWorn ?? this.lastWorn,
-      imageUrl: imageUrl ?? this.imageUrl,
-      costPerWear: costPerWear ?? this.costPerWear,
-      versatilityScore: versatilityScore ?? this.versatilityScore,
-    );
-  }
 }
 
 /// Sustainability metrics for conscious fashion

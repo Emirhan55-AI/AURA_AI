@@ -84,135 +84,135 @@ class WardrobeAnalyticsController extends _$WardrobeAnalyticsController {
   @override
   WardrobeAnalyticsState build() {
     // Initialize with loading state and trigger initial load
-    final initialState = WardrobeAnalyticsState.initial();
+    // final initialState = WardrobeAnalyticsState.initial();
     
     // Start loading data asynchronously
-    Future.microtask(() {
-      generateAnalytics();
-      loadRecommendations();
-      loadEfficiencyScore();
-      loadInsights();
-    });
+    // Future.microtask(() {
+    //   generateAnalytics();
+    //   loadRecommendations();
+    //   loadEfficiencyScore();
+    //   loadInsights();
+    // });
     
-    return initialState;
+    // return initialState;
   }
 
   /// Repository instance
-  WardrobeAnalyticsRepository get _repository => ref.read(wardrobeAnalyticsRepositoryProvider);
+  // WardrobeAnalyticsRepository get _repository => ref.read(wardrobeAnalyticsRepositoryProvider);
 
   /// Generate analytics for the selected period
-  Future<void> generateAnalytics({AnalyticsPeriod? period}) async {
-    final targetPeriod = period ?? state.selectedPeriod;
+  // Future<void> generateAnalytics({AnalyticsPeriod? period}) async {
+    // final targetPeriod = period ?? state.selectedPeriod;
     
     // Update period if different
-    if (targetPeriod != state.selectedPeriod) {
-      state = state.copyWith(
-        selectedPeriod: targetPeriod,
-        analytics: const AsyncValue.loading(),
-      );
-    } else if (state.analytics.isLoading) {
-      // Keep loading state if already loading
-      state = state.copyWith(analytics: const AsyncValue.loading());
-    }
+    // if (targetPeriod != state.selectedPeriod) {
+    //   state = state.copyWith(
+    //     selectedPeriod: targetPeriod,
+    //     analytics: const AsyncValue.loading(),
+    //   );
+    // } else if (state.analytics.isLoading) {
+    //   // Keep loading state if already loading
+    //   state = state.copyWith(analytics: const AsyncValue.loading());
+    // }
 
     try {
-      final analytics = await _repository.generateAnalytics(
-        userId: 'current_user',
-        period: targetPeriod,
-      );
+      // final analytics = await _repository.generateAnalytics(
+      //   userId: 'current_user',
+      //   period: targetPeriod,
+      // );
       
-      state = state.copyWith(
-        analytics: AsyncValue.data(analytics),
-        selectedPeriod: targetPeriod,
-      );
+      // state = state.copyWith(
+      //   analytics: AsyncValue.data(analytics),
+      //   selectedPeriod: targetPeriod,
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        analytics: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   analytics: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Load recommendations
-  Future<void> loadRecommendations() async {
+  // Future<void> loadRecommendations() async {
     state = state.copyWith(
       recommendations: const AsyncValue.loading(),
     );
 
     try {
-      final recommendations = await _repository.getRecommendations('current_user');
+      // final recommendations = await _repository.getRecommendations('current_user');
       
-      state = state.copyWith(
-        recommendations: AsyncValue.data(recommendations),
-      );
+      // state = state.copyWith(
+      //   recommendations: AsyncValue.data(recommendations),
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        recommendations: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   recommendations: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Load comparative analytics
-  Future<void> loadComparativeAnalytics() async {
+  // Future<void> loadComparativeAnalytics() async {
     state = state.copyWith(
       comparativeAnalytics: const AsyncValue.loading(),
     );
 
     try {
-      final comparative = await _repository.getComparativeAnalytics(
-        userId: 'current_user',
-        currentPeriod: state.selectedPeriod,
-      );
+      // final comparative = await _repository.getComparativeAnalytics(
+      //   userId: 'current_user',
+      //   currentPeriod: state.selectedPeriod,
+      // );
       
-      state = state.copyWith(
-        comparativeAnalytics: AsyncValue.data(comparative),
-      );
+      // state = state.copyWith(
+      //   comparativeAnalytics: AsyncValue.data(comparative),
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        comparativeAnalytics: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   comparativeAnalytics: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Load efficiency score
-  Future<void> loadEfficiencyScore() async {
+  // Future<void> loadEfficiencyScore() async {
     state = state.copyWith(
       efficiencyScore: const AsyncValue.loading(),
     );
 
     try {
-      final score = await _repository.calculateEfficiencyScore('current_user');
+      // final score = await _repository.calculateEfficiencyScore('current_user');
       
-      state = state.copyWith(
-        efficiencyScore: AsyncValue.data(score),
-      );
+      // state = state.copyWith(
+      //   efficiencyScore: AsyncValue.data(score),
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        efficiencyScore: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   efficiencyScore: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Load insights
-  Future<void> loadInsights() async {
+  // Future<void> loadInsights() async {
     state = state.copyWith(
       insights: const AsyncValue.loading(),
     );
 
     try {
-      final insights = await _repository.getInsights('current_user');
+      // final insights = await _repository.getInsights('current_user');
       
-      state = state.copyWith(
-        insights: AsyncValue.data(insights),
-      );
+      // state = state.copyWith(
+      //   insights: AsyncValue.data(insights),
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        insights: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   insights: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Change analytics period
-  Future<void> changePeriod(AnalyticsPeriod period) async {
+  // Future<void> changePeriod(AnalyticsPeriod period) async {
     if (period != state.selectedPeriod) {
       await generateAnalytics(period: period);
       await loadComparativeAnalytics();
@@ -220,7 +220,7 @@ class WardrobeAnalyticsController extends _$WardrobeAnalyticsController {
   }
 
   /// Refresh all analytics data
-  Future<void> refreshAnalytics() async {
+  // Future<void> refreshAnalytics() async {
     await Future.wait([
       generateAnalytics(),
       loadRecommendations(),
@@ -231,10 +231,10 @@ class WardrobeAnalyticsController extends _$WardrobeAnalyticsController {
   }
 
   /// Export analytics data
-  Future<void> exportAnalytics({
-    required List<String> sections,
-    String format = 'pdf',
-  }) async {
+  // Future<void> exportAnalytics({
+  //   required List<String> sections,
+  //   String format = 'pdf',
+  // }) async {
     if (state.isExporting) return;
 
     state = state.copyWith(
@@ -243,47 +243,47 @@ class WardrobeAnalyticsController extends _$WardrobeAnalyticsController {
     );
 
     try {
-      final exportUrl = await _repository.exportAnalytics(
-        userId: 'current_user',
-        sections: sections,
-        format: format,
-      );
+      // final exportUrl = await _repository.exportAnalytics(
+      //   userId: 'current_user',
+      //   sections: sections,
+      //   format: format,
+      // );
       
-      state = state.copyWith(
-        isExporting: false,
-        exportUrl: exportUrl,
-        operationState: const AsyncValue.data(null),
-      );
+      // state = state.copyWith(
+      //   isExporting: false,
+      //   exportUrl: exportUrl,
+      //   operationState: const AsyncValue.data(null),
+      // );
     } catch (error, stackTrace) {
-      state = state.copyWith(
-        isExporting: false,
-        operationState: AsyncValue.error(error, stackTrace),
-      );
+      // state = state.copyWith(
+      //   isExporting: false,
+      //   operationState: AsyncValue.error(error, stackTrace),
+      // );
     }
   }
 
   /// Track item usage
-  Future<void> trackItemUsage(String itemId) async {
+  // Future<void> trackItemUsage(String itemId) async {
     try {
-      await _repository.trackItemUsage(
-        userId: 'current_user',
-        itemId: itemId,
-      );
+      // await _repository.trackItemUsage(
+      //   userId: 'current_user',
+      //   itemId: itemId,
+      // );
     } catch (error, stackTrace) {
       // Log error but don't update UI state for tracking
-      print('Error tracking item usage: $error');
+      // print('Error tracking item usage: $error');
     }
   }
 
   /// Toggle detailed view
-  void toggleDetailedView() {
+  // void toggleDetailedView() {
     state = state.copyWith(
       showDetailedView: !state.showDetailedView,
     );
   }
 
   /// Clear export URL
-  void clearExportUrl() {
+  // void clearExportUrl() {
     state = state.copyWith(exportUrl: null);
   }
 }

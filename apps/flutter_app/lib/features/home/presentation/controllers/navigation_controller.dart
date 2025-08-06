@@ -12,7 +12,7 @@ class NavigationController {
 
   /// Select specific tab by index
   void selectTab(int index) {
-    if (index >= 0 && index < 5) { // 5 tabs total
+    if (index >= 0 && index < 6) { // 6 tabs total
       ref.read(navigationStateProvider.notifier).state = index;
     }
   }
@@ -37,19 +37,19 @@ class NavigationController {
     selectTab(2);
   }
 
-  /// Navigate to social tab (renamed from inspire me)
-  void goToSocial() {
+  /// Navigate to social feed tab
+  void goToSocialFeed() {
     selectTab(3);
   }
 
-  /// Navigate to inspire me tab (legacy alias for social)
-  void goToInspireMe() {
-    selectTab(3);
+  /// Navigate to messaging tab
+  void goToMessages() {
+    selectTab(4);
   }
 
   /// Navigate to profile tab
   void goToProfile() {
-    selectTab(4);
+    selectTab(5);
   }
 
   /// Get current tab index
@@ -64,8 +64,11 @@ class NavigationController {
   /// Check if currently on style assistant tab
   bool isOnStyleAssistant() => ref.read(navigationStateProvider) == 2;
 
-  /// Check if currently on inspire me tab
-  bool isOnInspireMe() => ref.read(navigationStateProvider) == 3;
+  /// Check if currently on social feed tab
+  bool isOnSocialFeed() => ref.read(navigationStateProvider) == 3;
+
+  /// Check if currently on messaging tab
+  bool isOnMessages() => ref.read(navigationStateProvider) == 4;
 
   /// Check if currently on profile tab
   bool isOnProfile() => ref.read(navigationStateProvider) == 4;
