@@ -164,3 +164,4 @@ async def get_recommendation(request: RecommendationRequest):
             status_code=500,
             detail=f"Kombin önerisi oluşturulurken bir hata oluştu: {str(e)}"
         )
+print("Server çalışıyor...")
