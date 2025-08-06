@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from supabase import create_client, Client
 from pydantic import BaseModel
-from postgrest import APIClient # <-- HATA DÜZELTMESİ: Gerekli importu ekledik
+# from postgrest import APIClient # <-- HATA DÜZELTMESİ: Bu satırı tamamen siliyoruz, artık gerekli değil.
 
 # .env dosyasından çevre değişkenlerini yükle
 load_dotenv()
@@ -32,12 +32,13 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url_here":
     try:
-        # <-- HATA DÜZELTMESİ: Render'daki proxy sorununu çözmek için options parametresi eklendi
+        # <-- HATA DÜZELTMESİ: Render'daki proxy sorununu çözmek için DOĞRU options yapısı kullanıldı.
+        # Kütüphanenin yeni versiyonu bu şekilde bir yapı bekliyor.
         supabase = create_client(
             SUPABASE_URL,
             SUPABASE_KEY,
             options={
-                "postgrest_client_options": APIClient(headers={}, schema="public", timeout=10, transport_options={"proxies": None})
+                "postgrest_client_options": { "proxies": None }
             }
         )
         print("✅ Supabase bağlantısı başarılı")
