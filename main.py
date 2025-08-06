@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from supabase import create_client, Client
 from pydantic import BaseModel
-from postgrest import APIClient # Uyumlu versiyon için bu import gerekli
 
 # .env dosyasından çevre değişkenlerini yükle
 load_dotenv()
@@ -32,14 +31,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url_here":
     try:
-        # Uyumlu versiyonlar için proxy sorununu çözen options yapısı
-        supabase = create_client(
-            SUPABASE_URL,
-            SUPABASE_KEY,
-            options={
-                "postgrest_client_options": APIClient(transport_options={"proxies": None})
-            }
-        )
+        # Uyumlu versiyonlar için en temiz başlatma yöntemi
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         print("✅ Supabase bağlantısı başarılı")
     except Exception as e:
         print(f"⚠️ Supabase bağlantı hatası: {e}")
@@ -63,7 +56,7 @@ class RecommendationRequest(BaseModel):
 app = FastAPI(
     title="Aura AI Backend",
     description="Kıyafet fotoğraflarını analiz eden ve kombin önerileri yapan yapay zeka servisi",
-    version="3.0.0"
+    version="4.0.0"
 )
 
 
@@ -167,4 +160,3 @@ async def get_recommendation(request: RecommendationRequest):
             status_code=500,
             detail=f"Kombin önerisi oluşturulurken bir hata oluştu: {str(e)}"
         )
-
