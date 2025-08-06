@@ -40,6 +40,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   
+  # HTTP Parser for handling content types
+  http_parser: ^4.0.2
+  
   # State Management - Riverpod v2
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
@@ -107,6 +110,7 @@ dependencies:
   web_socket_channel: ^3.0.1
   flutter_dotenv: ^5.2.1
   hooks_riverpod: ^2.6.1
+  image_cropper: ^9.1.0
 
 dev_dependencies:
   flutter_test:

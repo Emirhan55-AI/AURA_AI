@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import '../../../core/error/failure.dart';
 
 /// Aura AI API Service for image processing and style recommendations
@@ -11,7 +15,8 @@ import '../../../core/error/failure.dart';
 /// - Image processing for clothing analysis
 /// - Personalized style recommendations
 class AuraAiService {
-  static const String _baseUrl = 'https://aura-one-sigma.vercel.app';
+  // Local CORS proxy server
+  static const String _baseUrl = 'http://localhost:8084';
   static const String _processImageEndpoint = '/process-image/';
   static const String _getRecommendationEndpoint = '/get-recommendation/';
   
@@ -83,26 +88,64 @@ class AuraAiService {
     }
   }
 
+  /// Compress image bytes and convert to JPEG format if needed
+  static Future<Uint8List> _compressImage(Uint8List bytes) async {
+    // Decode the image
+    final image = img.decodeImage(bytes);
+    if (image == null) throw Exception('Could not decode image');
+    
+    // Resize if too large (max 1024x1024 while maintaining aspect ratio)
+    var resized = image;
+    if (image.width > 1024 || image.height > 1024) {
+      final ratio = image.width / image.height;
+      if (ratio > 1) {
+        resized = img.copyResize(image, width: 1024);
+      } else {
+        resized = img.copyResize(image, height: 1024);
+      }
+    }
+    
+    // Encode as JPEG with quality 85
+    return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
+  }
+
   /// Process clothing image from XFile (web compatible)
   Future<Either<Failure, ClothingAnalysisResult>> processImageFromXFile(XFile imageFile) async {
     try {
       final uri = Uri.parse('$_baseUrl$_processImageEndpoint');
+      if (kDebugMode) {
+        print('🔍 AI DEBUG: Sending request to: $uri');
+      }
       
       final request = http.MultipartRequest('POST', uri);
-      final bytes = await imageFile.readAsBytes();
       
-      // Backend expects 'file' field name, not 'image'
+      final bytes = await imageFile.readAsBytes();
+      if (kDebugMode) {
+        print('🔍 AI DEBUG: Original image size: ${bytes.length} bytes');
+      }
+      
+      // Convert and compress the image
+      final compressedBytes = await compute<Uint8List, Uint8List>(_compressImage, bytes);
+      if (kDebugMode) {
+        print('🔍 AI DEBUG: Compressed image size: ${compressedBytes.length} bytes');
+      }
+      
+      // Add the compressed image file
       request.files.add(
         http.MultipartFile.fromBytes(
-          'file',  // Backend beklediği field name
-          bytes,
-          filename: imageFile.name,
+          'file',  // Backend expects 'file' field name
+          compressedBytes,
+          filename: 'image.jpg',
+          contentType: MediaType('image', 'jpeg'),
         ),
       );
       
-      // Content-Type multipart/form-data olarak ayarlanacak otomatik
+      // Let MultipartRequest handle the Content-Type header
       final streamedResponse = await _httpClient.send(request);
       final response = await http.Response.fromStream(streamedResponse);
+      
+      print('🔍 AI DEBUG: Response status: ${response.statusCode}');
+      print('🔍 AI DEBUG: Response body: ${response.body}');
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body) as Map<String, dynamic>;
@@ -163,9 +206,14 @@ class AuraAiService {
       
       final body = {
         'user_id': userId,
-        'query': query,
+        'soru': query,  // API 'soru' field'ını bekliyor, 'query' değil
         if (context != null) 'context': context,
       };
+      
+      if (kDebugMode) {
+        print('🔍 AI DEBUG: Sending recommendation request to: $uri');
+        print('🔍 AI DEBUG: Request body: ${json.encode(body)}');
+      }
       
       final response = await _httpClient.post(
         uri,
@@ -175,6 +223,11 @@ class AuraAiService {
         },
         body: json.encode(body),
       );
+      
+      if (kDebugMode) {
+        print('🔍 AI DEBUG: Response status: ${response.statusCode}');
+        print('🔍 AI DEBUG: Response body: ${response.body}');
+      }
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body) as Map<String, dynamic>;

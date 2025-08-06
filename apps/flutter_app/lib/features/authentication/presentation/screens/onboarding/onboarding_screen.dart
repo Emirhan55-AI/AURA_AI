@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       );
     } else {
       // Navigate to login on the last page's "Get Started" press
-      context.go('/auth/login');
+      context.go('/login');
     }
   }
 
@@ -70,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _skipOnboarding() {
-    context.go('/auth/login');
+    context.go('/login');
   }
 
   Widget _buildPageIndicator() {

@@ -26,6 +26,9 @@ import '../../features/wardrobe/presentation/screens/ai_styling_suggestions_scre
 import '../../features/wardrobe/presentation/screens/wardrobe_analytics_screen.dart';
 import '../../features/wardrobe/presentation/screens/wardrobe_planner_screen.dart';
 
+// Import screens - Outfits
+import '../../features/outfits/presentation/screens/outfit_detail_screen.dart';
+
 // Import screens - Style Assistant
 import '../../features/style_assistant/presentation/screens/style_assistant_screen.dart';
 import '../../features/style_assistant/presentation/screens/style_challenges_screen.dart';
@@ -197,6 +200,14 @@ List<RouteBase> _buildRoutes() {
           name: 'createOutfit',
           builder: (BuildContext context, GoRouterState state) {
             return const OutfitCreationScreen();
+          },
+        ),
+        GoRoute(
+          path: '/outfits/:outfitId/detail',
+          name: 'outfitDetail',
+          builder: (BuildContext context, GoRouterState state) {
+            final outfitId = state.pathParameters['outfitId']!;
+            return OutfitDetailScreen(outfitId: outfitId);
           },
         ),
         GoRoute(

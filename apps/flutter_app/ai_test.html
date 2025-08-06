@@ -126,8 +126,8 @@
     </div>
 
     <script>
-        // CORS proxy kullanarak API'ye erişim
-        const API_BASE = 'https://cors-anywhere.herokuapp.com/https://aura-one-sigma.vercel.app';
+        // Direk API'ye erişim - Chrome CORS bypass ile çalışır
+        const API_BASE = 'https://aura-one-sigma.vercel.app';
         // Alternatif proxy: const API_BASE = 'https://api.allorigins.win/raw?url=https://aura-one-sigma.vercel.app';
 
         function showResult(elementId, content, type = 'info') {
