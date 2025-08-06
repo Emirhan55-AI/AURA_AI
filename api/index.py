@@ -78,9 +78,9 @@ async def process_image(file: UploadFile = File(...)):
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
         
-        prompt = """Bu resimdeki giysiyi analiz et. Giysinin kategorisini (örneğin: Gömlek, Pantolon, Elbise, Ceket), ana rengini (örneğin: Mavi, Kırmızı, Siyah) ve desenini (örneğin: Düz, Çizgili, Ekose, Çiçekli) belirle.
+        prompt = """Bu resimdeki giysiyi analiz et. Giysinin kategorisini (örneğin: Gömlek, Pantolon, Elbise, Ceket), ana rengini (örneğin: Mavi, Kırmızı, Siyah), desenini (örneğin: Düz, Çizgili, Ekose, Çiçekli), stilini (örneğin: Günlük, Resmi, Spor), mevsimini (örneğin: Yazlık, Kışlık, Mevsimlik) ve kumaşını (örneğin: Kot, Keten, Penye) belirle.
 
-Cevabını, başka hiçbir açıklama veya metin eklemeden, SADECE aşağıdaki anahtarlara sahip bir JSON nesnesi olarak ver: {"kategori": "", "renk": "", "desen": ""}
+Cevabını, başka hiçbir açıklama veya metin eklemeden, SADECE aşağıdaki anahtarlara sahip bir JSON nesnesi olarak ver: {"kategori": "", "renk": "", "desen": "", "stil": "", "mevsim": "", "kumas": ""}
 
 Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON metnini döndür."""
         
@@ -89,7 +89,7 @@ Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON
         
         try:
             analysis_result = json.loads(ai_response_text)
-            required_keys = ["kategori", "renk", "desen"]
+            required_keys = ["kategori", "renk", "desen", "stil", "mevsim", "kumas"]
             if not all(key in analysis_result for key in required_keys):
                 raise ValueError("AI cevabında gerekli anahtarlar eksik")
             
@@ -131,7 +131,10 @@ async def get_recommendation(request: RecommendationRequest):
             gardirop_listesi = [
                 (f"- Kategori: {kiyafet.get('kategori', 'N/A')}, "
                  f"Renk: {kiyafet.get('renk', 'N/A')}, "
-                 f"Desen: {kiyafet.get('desen', 'N/A')}")
+                 f"Desen: {kiyafet.get('desen', 'N/A')}, "
+                 f"Stil: {kiyafet.get('stil', 'N/A')}, "
+                 f"Mevsim: {kiyafet.get('mevsim', 'N/A')}, "
+                 f"Kumaş: {kiyafet.get('kumas', 'N/A')}")
                 for kiyafet in user_clothes
             ]
             gardirop_metni = "\n".join(gardirop_listesi)
