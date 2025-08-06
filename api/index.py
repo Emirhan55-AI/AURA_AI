@@ -10,7 +10,6 @@ import io
 from PIL import Image
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import google.generativeai as genai
 from supabase import create_client, Client
@@ -61,50 +60,10 @@ app = FastAPI(
     version="7.0.0" # Final Fix
 )
 
-# Manuel CORS middleware
-@app.middleware("http")
-async def cors_handler(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
-    response.headers["Access-Control-Max-Age"] = "86400"
-    return response
-
 
 @app.get("/")
 async def root():
     return {"message": "Aura AI Backend - Kıyafet Analizi Servisi Çalışıyor!"}
-
-
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Handle CORS preflight requests"""
-    return JSONResponse(
-        status_code=200,
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
-            "Access-Control-Max-Age": "86400"
-        }
-    )
-
-
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Handle OPTIONS requests for CORS preflight"""
-    return JSONResponse(
-        status_code=200,
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
-            "Access-Control-Max-Age": "86400"
-        }
-    )
 
 
 @app.post("/process-image/")
@@ -166,11 +125,6 @@ Sakın cevabında json ... gibi markdown işaretlerini kullanma. Sadece ham JSON
                     "success": True,
                     "data": analysis_result,
                     "message": "Kıyafet analizi başarıyla tamamlandı"
-                },
-                headers={
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With"
                 }
             )
         except (json.JSONDecodeError, ValueError) as e:
@@ -237,11 +191,6 @@ async def get_recommendation(request: RecommendationRequest):
                 "success": True,
                 "cevap": ai_response.text,
                 "message": "Kombin önerisi başarıyla oluşturuldu"
-            },
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With"
             }
         )
     except Exception as e:
